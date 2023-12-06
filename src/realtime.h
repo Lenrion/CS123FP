@@ -8,17 +8,17 @@
 #include <glm/glm.hpp>
 
 #include <unordered_map>
-#include "../debugger.h"
+#include "debugger.h"
 #include <QElapsedTimer>
 #include <QOpenGLWidget>
 #include <QTime>
 #include <QTimer>
 #include "./utils/sceneparser.h"
-#include "../Sphere.h"
-#include "../Cone.h"
-#include "../Cylinder.h"
-#include "../Cube.h"
-#include "../camera.h"
+#include "shapes/Sphere.h"
+#include "shapes/Cone.h"
+#include "shapes/Cylinder.h"
+#include "shapes/Cube.h"
+#include "camera.h"
 
 class Realtime : public QOpenGLWidget
 {

@@ -5,12 +5,12 @@
 #include <QKeyEvent>
 #include <iostream>
 #include "settings.h"
-#include "../Cone.h"
-#include "../Sphere.h"
-#include "../Cylinder.h"
-#include "../Cube.h"
+#include "shapes/Cone.h"
+#include "shapes/Sphere.h"
+#include "shapes/Cylinder.h"
+#include "shapes/Cube.h"
 #include "utils/shaderloader.h"
-#include "../Camera.h"
+#include "camera.h"
 
 // ================== Project 5: Lights, Camera
 

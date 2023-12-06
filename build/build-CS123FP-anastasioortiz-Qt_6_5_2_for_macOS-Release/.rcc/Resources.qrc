@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="resources/shaders/default.frag">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/default.frag</file>
+    <file alias="resources/shaders/default.vert">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/default.vert</file>
+    <file alias="resources/shaders/pixel.vert">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/pixel.vert</file>
+    <file alias="resources/shaders/pixel.frag">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/pixel.frag</file>
+  </qresource>
+</RCC>
+
