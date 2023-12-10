@@ -1283,6 +1283,8 @@ CS123FP_autogen/timestamp: \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Cylinder.h \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Sphere.cpp \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Sphere.h \
+  /Users/anastasioortiz/graphics/CS123FP/src/terraingenerator.cpp \
+  /Users/anastasioortiz/graphics/CS123FP/src/terraingenerator.h \
   /Users/anastasioortiz/graphics/CS123FP/src/utils/aspectratiowidget/aspectratiowidget.hpp \
   /Users/anastasioortiz/graphics/CS123FP/src/utils/scenedata.h \
   /Users/anastasioortiz/graphics/CS123FP/src/utils/scenefilereader.cpp \

@@ -23,6 +23,11 @@ void Camera::update(SceneCameraData cameraData, int width, int height){
     calculateProjectionMatrix();
 }
 
+glm::vec3 Camera::getCameraPos(){
+    return pos;
+}
+
+
 
 
 glm::mat4 Camera::getViewMatrix() const {

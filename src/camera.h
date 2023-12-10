@@ -35,6 +35,7 @@ public:
     // This is for the depth of field extra-credit feature only;
     // You can ignore if you are not attempting to implement depth of field.
     float getAperture() const;
+    glm::vec3 getCameraPos();
 
     void calculateViewMatrix();
     void calculateProjectionMatrix();

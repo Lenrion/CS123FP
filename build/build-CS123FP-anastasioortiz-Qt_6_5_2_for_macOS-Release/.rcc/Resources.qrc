@@ -4,6 +4,8 @@
     <file alias="resources/shaders/default.vert">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/default.vert</file>
     <file alias="resources/shaders/pixel.vert">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/pixel.vert</file>
     <file alias="resources/shaders/pixel.frag">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/pixel.frag</file>
+    <file alias="resources/shaders/terrain.frag">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/terrain.frag</file>
+    <file alias="resources/shaders/terrain.vert">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/terrain.vert</file>
   </qresource>
 </RCC>
 

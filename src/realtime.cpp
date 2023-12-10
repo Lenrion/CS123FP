@@ -11,6 +11,8 @@
 #include "shapes/Cube.h"
 #include "utils/shaderloader.h"
 #include "camera.h"
+#include "terraingenerator.h"
+#include <unordered_map>
 
 // ================== Project 5: Lights, Camera
 
@@ -49,6 +51,12 @@ void Realtime::finish() {
     glDeleteVertexArrays(size, &cylinderVAO);
     glDeleteBuffers(size, &cubeVBO);
     glDeleteVertexArrays(size, &cubeVAO);
+//    for(int i = 0; i < terrainRowMap.size(); i++){
+//        glDeleteBuffers(size, &terrainMap[i].terrainVBO);
+//        glDeleteVertexArrays(size, &terrainMap[i].terrainVAO);
+//    }
+
+
 
     glDeleteVertexArrays(1, &m_fullscreen_vao);
     glDeleteBuffers(1, &m_fullscreen_vbo);
@@ -58,6 +66,7 @@ void Realtime::finish() {
 
     glDeleteProgram(shader);
     glDeleteProgram(m_filterShader);
+    glDeleteProgram(m_terrainShader);
     doneCurrent();
 
     this->doneCurrent();
@@ -93,6 +102,7 @@ void Realtime::initializeGL() {
 
     m_filterShader = ShaderLoader::createShaderProgram(":/resources/shaders/pixel.vert", ":/resources/shaders/pixel.frag");
     shader = ShaderLoader::createShaderProgram(":/resources/shaders/default.vert", ":/resources/shaders/default.frag");
+    m_terrainShader = ShaderLoader::createShaderProgram(":/resources/shaders/terrain.vert", ":/resources/shaders/terrain.frag");
 
     // Students: anything requiring OpenGL calls when the program starts should be done here
 
@@ -102,10 +112,12 @@ void Realtime::initializeGL() {
     cylinder = Cylinder();
     sphere = Sphere();
     cube = Cube();
+    terrain = TerrainGenerator();
     createSphere();
     createCone();
     createCylinder();
     createCube();
+    createTerrain(0,0);
 
     std::vector<GLfloat> fullscreen_quad_data =
         { //     POSITIONS    //
@@ -148,89 +160,90 @@ void Realtime::paintGL() {
     m_view = m_camera.getViewMatrix();
     m_proj = m_camera.getProjectionMatrix();
 
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shader);
+    glUseProgram(m_terrainShader);
     // Clear screen color and depth before painting
-    GLint cameraWorldPosLocation  = glGetUniformLocation(shader, "cameraWorldPos");
-    glUniform4fv(cameraWorldPosLocation,1.f,&(glm::inverse(m_view)*glm::vec4(0.f,0.f,0.f,1.f))[0]);
+//    GLint cameraWorldPosLocation  = glGetUniformLocation(shader, "cameraWorldPos");
+//    glUniform4fv(cameraWorldPosLocation,1.f,&(glm::inverse(m_view)*glm::vec4(0.f,0.f,0.f,1.f))[0]);
 
-    GLint viewMatrixLocation = glGetUniformLocation(shader, "viewMatrix");
-    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &m_view[0][0]);
+//    GLint viewMatrixLocation = glGetUniformLocation(shader, "viewMatrix");
+//    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &m_view[0][0]);
 
-    GLint projectionMatrixLocation = glGetUniformLocation(shader, "projectionMatrix");
-    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &m_proj[0][0]);
+//    GLint projectionMatrixLocation = glGetUniformLocation(shader, "projectionMatrix");
+//    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &m_proj[0][0]);
 
-    GLint ksLocation = glGetUniformLocation(shader, "k_s");
-    glUniform1f(ksLocation, m_ks);
+    glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "projMatrix"), 1, GL_FALSE, &m_proj[0][0]);
 
-    // Task 12: pass m_ka into the fragment shader as a uniform
-    GLint kaLocation = glGetUniformLocation(shader, "k_a");
-    glUniform1f(kaLocation, m_ka);
 
-    GLint kdLocation = glGetUniformLocation(shader, "k_d");
-    glUniform1f(kdLocation, m_kd);
+//    GLint ksLocation = glGetUniformLocation(shader, "k_s");
+//    glUniform1f(ksLocation, m_ks);
+
+//    // Task 12: pass m_ka into the fragment shader as a uniform
+//    GLint kaLocation = glGetUniformLocation(shader, "k_a");
+//    glUniform1f(kaLocation, m_ka);
+
+//    GLint kdLocation = glGetUniformLocation(shader, "k_d");
+//    glUniform1f(kdLocation, m_kd);
 
 
     for(RenderShapeData shape: renderData.shapes){
+        m_model = shape.ctm;
+        glm::mat4 mvMatrix = m_view * m_model;
+        glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "mvMatrix"), 1, GL_FALSE, &m_view[0][0]);
+//        GLint ambientLocation = glGetUniformLocation(shader, "ambient");
+//        glUniform4fv(ambientLocation,1.f, &shape.primitive.material.cAmbient[0]);
 
-        GLint ambientLocation = glGetUniformLocation(shader, "ambient");
-        glUniform4fv(ambientLocation,1.f, &shape.primitive.material.cAmbient[0]);
+//        GLint diffuseLocation = glGetUniformLocation(shader, "diffuse");
+//        glUniform4fv(diffuseLocation,1.f , &shape.primitive.material.cDiffuse[0]);
 
-        GLint diffuseLocation = glGetUniformLocation(shader, "diffuse");
-        glUniform4fv(diffuseLocation,1.f , &shape.primitive.material.cDiffuse[0]);
+//        GLint specularLocation = glGetUniformLocation(shader, "specular");
+//        glUniform4fv(specularLocation, 1.f, &shape.primitive.material.cSpecular[0]);
 
-        GLint specularLocation = glGetUniformLocation(shader, "specular");
-        glUniform4fv(specularLocation, 1.f, &shape.primitive.material.cSpecular[0]);
+//        GLint shininessLocation = glGetUniformLocation(shader, "shininess");
+//        glUniform1f(shininessLocation, shape.primitive.material.shininess);
 
-        GLint shininessLocation = glGetUniformLocation(shader, "shininess");
-        glUniform1f(shininessLocation, shape.primitive.material.shininess);
-
-
-        GLint modelMatrixLocation;
-        GLint inverseTransposeMatrixLocation;
-        switch(shape.primitive.type){
-            case PrimitiveType::PRIMITIVE_SPHERE:
-                glBindVertexArray(sphereVAO);
-                m_model = shape.ctm;
-                modelMatrixLocation = glGetUniformLocation(shader, "modelMatrix");
-                glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &m_model[0][0]);
-                inverseTransposeMatrixLocation = glGetUniformLocation(shader, "inverseTransposeMatrix");
-                glUniformMatrix4fv(inverseTransposeMatrixLocation, 1, GL_FALSE, &glm::inverse(glm::transpose(m_model))[0][0]);
-                glDrawArrays(GL_TRIANGLES, 0, sphereData.size() / 6);
-
-                break;
-            case PrimitiveType::PRIMITIVE_CYLINDER:
-                glBindVertexArray(cylinderVAO);
-                m_model = shape.ctm;
-                modelMatrixLocation = glGetUniformLocation(shader, "modelMatrix");
-                glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &m_model[0][0]);
-                inverseTransposeMatrixLocation = glGetUniformLocation(shader, "inverseTransposeMatrix");
-                glUniformMatrix4fv(inverseTransposeMatrixLocation, 1, GL_FALSE, &glm::inverse(glm::transpose(m_model))[0][0]);
-
-                glDrawArrays(GL_TRIANGLES, 0, cylinderData.size() / 6);
-                break;
-            case PrimitiveType::PRIMITIVE_CUBE:
-                glBindVertexArray(cubeVAO);
-                m_model = shape.ctm;
-                modelMatrixLocation = glGetUniformLocation(shader, "modelMatrix");
-                glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &m_model[0][0]);
-                inverseTransposeMatrixLocation = glGetUniformLocation(shader, "inverseTransposeMatrix");
-                glUniformMatrix4fv(inverseTransposeMatrixLocation, 1, GL_FALSE, &glm::inverse(glm::transpose(m_model))[0][0]);
-                glDrawArrays(GL_TRIANGLES, 0, cubeData.size() / 3);
-                break;
-            case PrimitiveType::PRIMITIVE_CONE:
-                glBindVertexArray(coneVAO);
-                m_model = shape.ctm;
-                modelMatrixLocation = glGetUniformLocation(shader, "modelMatrix");
-                glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &m_model[0][0]);
-                inverseTransposeMatrixLocation = glGetUniformLocation(shader, "inverseTransposeMatrix");
-                glUniformMatrix4fv(inverseTransposeMatrixLocation, 1, GL_FALSE, &glm::inverse(glm::transpose(m_model))[0][0]);
-                glDrawArrays(GL_TRIANGLES, 0, coneData.size() / 3);
-                break;
-            }
+//        m_model = shape.ctm;
+//        GLint modelMatrixLocation = glGetUniformLocation(shader, "modelMatrix");
+//        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &m_model[0][0]);
+//        GLint inverseTransposeMatrixLocation = glGetUniformLocation(shader, "inverseTransposeMatrix");
+//        glUniformMatrix4fv(inverseTransposeMatrixLocation, 1, GL_FALSE, &glm::inverse(glm::transpose(m_model))[0][0]);
 
 
-        glBindVertexArray(0);
+//        switch(shape.primitive.type){
+//            case PrimitiveType::PRIMITIVE_SPHERE:
+//                glBindVertexArray(sphereVAO);
+//                glDrawArrays(GL_TRIANGLES, 0, sphereData.size() / 6);
+//                break;
+//            case PrimitiveType::PRIMITIVE_CYLINDER:
+//                glBindVertexArray(cylinderVAO);
+//                glDrawArrays(GL_TRIANGLES, 0, cylinderData.size() / 6);
+//                break;
+//            case PrimitiveType::PRIMITIVE_CUBE:
+//                glBindVertexArray(cubeVAO);
+//                glDrawArrays(GL_TRIANGLES, 0, cubeData.size() / 3);
+//                break;
+//            case PrimitiveType::PRIMITIVE_CONE:
+//                glBindVertexArray(coneVAO);
+//                glDrawArrays(GL_TRIANGLES, 0, coneData.size() / 3);
+//                break;
+//            }
+
+
+        for(int i = 0; i < 25 ; i++){
+            int row = (i % 5);
+            int col = i / 5;
+            glBindVertexArray(terrainRowMap[row][col].terrainVAO);
+
+            int res = terrain.getResolution();
+
+
+            glPolygonMode(GL_FRONT_AND_BACK,false);
+            glDrawArrays(GL_TRIANGLES, 0, res * res * 6);
+
+    //        glDrawArrays(GL_TRIANGLES, 0, terrainData.size() / 3);
+            glBindVertexArray(0);
+        }
 
 
     }
@@ -305,64 +318,64 @@ void Realtime::sceneChanged() {
     if(shader > 0){
 
        SceneParser::parse(settings.sceneFilePath, renderData);
-        std::vector<SceneLightData> lights = renderData.lights;
-        int numLights = 0;
-       glUseProgram(shader);
-       for(int i = 0; i < lights.size(); i++){
-            //pos
-                int type;
-                switch(lights[i].type) {
-                case LightType::LIGHT_DIRECTIONAL:
-                    type = 0;
-                    break;
-                case LightType::LIGHT_POINT:
-                    type = 1;
-                    break;
-                case LightType::LIGHT_SPOT:
-                    type = 2;
-                    std::string lightAngleName = "lights[" + std::to_string(i) + "].angle";
-                    GLint lightAngleLoc = glGetUniformLocation(shader, lightAngleName.c_str());
-                    glUniform1f(lightAngleLoc,lights[i].angle);
-                    std::string lightPenumbraName = "lights[" + std::to_string(i) + "].penumbra";
-                    GLint lightPenumbraLoc = glGetUniformLocation(shader, lightPenumbraName.c_str());
-                    glUniform1f(lightPenumbraLoc,lights[i].penumbra);
-                    break;
-                }
+//        std::vector<SceneLightData> lights = renderData.lights;
+//        int numLights = 0;
+//       glUseProgram(shader);
+//       for(int i = 0; i < lights.size(); i++){
+//            //pos
+//                int type;
+//                switch(lights[i].type) {
+//                case LightType::LIGHT_DIRECTIONAL:
+//                    type = 0;
+//                    break;
+//                case LightType::LIGHT_POINT:
+//                    type = 1;
+//                    break;
+//                case LightType::LIGHT_SPOT:
+//                    type = 2;
+//                    std::string lightAngleName = "lights[" + std::to_string(i) + "].angle";
+//                    GLint lightAngleLoc = glGetUniformLocation(shader, lightAngleName.c_str());
+//                    glUniform1f(lightAngleLoc,lights[i].angle);
+//                    std::string lightPenumbraName = "lights[" + std::to_string(i) + "].penumbra";
+//                    GLint lightPenumbraLoc = glGetUniformLocation(shader, lightPenumbraName.c_str());
+//                    glUniform1f(lightPenumbraLoc,lights[i].penumbra);
+//                    break;
+//                }
 
-                std::string lightAName = "lights[" + std::to_string(i) + "].a";
-                GLint lightALoc = glGetUniformLocation(shader, lightAName.c_str());
-                glUniform1f(lightALoc,lights[i].function[0]);
+//                std::string lightAName = "lights[" + std::to_string(i) + "].a";
+//                GLint lightALoc = glGetUniformLocation(shader, lightAName.c_str());
+//                glUniform1f(lightALoc,lights[i].function[0]);
 
-                std::string lightBName = "lights[" + std::to_string(i) + "].b";
-                GLint lightBLoc = glGetUniformLocation(shader, lightBName.c_str());
-                glUniform1f(lightBLoc,lights[i].function[1]);
+//                std::string lightBName = "lights[" + std::to_string(i) + "].b";
+//                GLint lightBLoc = glGetUniformLocation(shader, lightBName.c_str());
+//                glUniform1f(lightBLoc,lights[i].function[1]);
 
-                std::string lightCName = "lights[" + std::to_string(i) + "].c";
-                GLint lightCLoc = glGetUniformLocation(shader, lightCName.c_str());
-                glUniform1f(lightCLoc,lights[i].function[2]);
-
-
-                std::string lightTypeName = "lights[" + std::to_string(i) + "].type";
-                GLint lightTypeLoc = glGetUniformLocation(shader, lightTypeName.c_str());
-                glUniform1i(lightTypeLoc,type);
-
-                std::string lightPosName = "lights[" + std::to_string(i) + "].pos";
-                GLint lightPosLoc = glGetUniformLocation(shader, lightPosName.c_str());
-                glUniform4fv(lightPosLoc,1.f, &renderData.lights[i].pos[0]);
-                //dir
-                std::string lightDirName = "lights[" + std::to_string(i) + "].dir";
-                GLint lightDirLoc = glGetUniformLocation(shader, lightDirName.c_str());
-                glUniform4fv(lightDirLoc,1.f, &renderData.lights[i].dir[0]);
-                //color
-                std::string lightColorName = "lights[" + std::to_string(i) + "].color";
-                GLint lightColorLoc = glGetUniformLocation(shader, lightColorName.c_str());
-                glUniform4fv(lightColorLoc, 1.f, &renderData.lights[i].color[0]);
-                numLights++;
+//                std::string lightCName = "lights[" + std::to_string(i) + "].c";
+//                GLint lightCLoc = glGetUniformLocation(shader, lightCName.c_str());
+//                glUniform1f(lightCLoc,lights[i].function[2]);
 
 
-       }
-       glUniform1i(glGetUniformLocation(shader, "numLights"), numLights);
-       glUseProgram(0);
+//                std::string lightTypeName = "lights[" + std::to_string(i) + "].type";
+//                GLint lightTypeLoc = glGetUniformLocation(shader, lightTypeName.c_str());
+//                glUniform1i(lightTypeLoc,type);
+
+//                std::string lightPosName = "lights[" + std::to_string(i) + "].pos";
+//                GLint lightPosLoc = glGetUniformLocation(shader, lightPosName.c_str());
+//                glUniform4fv(lightPosLoc,1.f, &renderData.lights[i].pos[0]);
+//                //dir
+//                std::string lightDirName = "lights[" + std::to_string(i) + "].dir";
+//                GLint lightDirLoc = glGetUniformLocation(shader, lightDirName.c_str());
+//                glUniform4fv(lightDirLoc,1.f, &renderData.lights[i].dir[0]);
+//                //color
+//                std::string lightColorName = "lights[" + std::to_string(i) + "].color";
+//                GLint lightColorLoc = glGetUniformLocation(shader, lightColorName.c_str());
+//                glUniform4fv(lightColorLoc, 1.f, &renderData.lights[i].color[0]);
+//                numLights++;
+
+
+//       }
+//       glUniform1i(glGetUniformLocation(shader, "numLights"), numLights);
+//       glUseProgram(0);
 
        m_camera = Camera(renderData.cameraData, size().width(), size().height());
        m_model = glm::mat4(1.f);
@@ -386,6 +399,7 @@ void Realtime::settingsChanged() {
        createCone();
        createCylinder();
        createCube();
+       createTerrain(0,0);
        update(); // asks for a PaintGL() call to occur
     }
 }
@@ -456,10 +470,12 @@ void Realtime::timerEvent(QTimerEvent *event) {
     }
 
     m_camera.updateCameraPos(movement * deltaTime);
+//    std::cout << "x: " << m_camera.getCameraPos().x << std::endl;
+//    std::cout << "y: " << m_camera.getCameraPos().y << std::endl;
+//    std::cout << "z: " << m_camera.getCameraPos().z << std::endl;
 
 
     // Use deltaTime and m_keyMap here to move around
-
     update(); // asks for a PaintGL() call to occur
 }
 
@@ -606,3 +622,41 @@ void Realtime::createCube(){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
+
+
+void Realtime::createTerrain(float xOffset, float yOffset){
+//    for(int i = 0; i < 25; i++){
+//        int row = (i / 5) + yOffset;
+//        int col = (i % 5) + xOffset;
+        if(terrainRowMap[0][0].terrainData.empty()){
+            TerrainInfo info;
+            GLuint terrainVBO;
+            GLuint terrainVAO;
+            std::vector<float> terrainData = terrain.generateTerrain(0,0);
+            GLsizei size = 1;
+            glGenBuffers(size,&terrainVBO);
+            glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
+
+            glBufferData(GL_ARRAY_BUFFER, terrainData.size() * sizeof(GLfloat),terrainData.data(), GL_STATIC_DRAW);
+
+            glGenVertexArrays(size, &terrainVAO);
+            glBindVertexArray(terrainVAO);
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), nullptr);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat),
+                                  reinterpret_cast<void *>(6 * sizeof(GLfloat)));
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+            info.terrainVAO = terrainVAO;
+            info.terrainVBO = terrainVBO;
+            info.row = 0 + yOffset;
+            info.col = 0 + xOffset;
+            info.terrainData = terrainData;
+            terrainRowMap[0][0] = info;
+        }
+    }
+//}

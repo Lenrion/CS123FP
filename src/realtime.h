@@ -19,6 +19,7 @@
 #include "shapes/Cylinder.h"
 #include "shapes/Cube.h"
 #include "camera.h"
+#include "terraingenerator.h"
 
 class Realtime : public QOpenGLWidget
 {
@@ -55,6 +56,7 @@ private:
     GLuint cubeVBO;
     GLuint cubeVAO;
 
+
     GLuint m_defaultFBO;
     GLuint m_fbo;
     GLuint m_fbo_texture;
@@ -63,7 +65,7 @@ private:
     int m_fbo_height;
     int m_screen_width;
     int m_screen_height;
-    GLuint m_filterShader;
+
 
     std::vector<float> sphereData;
     std::vector<float> coneData;
@@ -74,14 +76,31 @@ private:
     GLuint m_fullscreen_vao;
 
 
+    struct TerrainInfo{
+        GLuint terrainVBO;
+        GLuint terrainVAO;
+        int row;
+        int col;
+        std::vector<float> terrainData;
+    };
+
+
     GLuint shader = 0;
+    GLuint m_filterShader;
+    GLuint m_terrainShader;
+
     Cone cone;
     Cube cube;
     Cylinder cylinder;
     Sphere sphere;
+    TerrainGenerator terrain;
     float m_ka;
     float m_ks;
     float m_kd;
+
+    std::unordered_map<int, TerrainInfo> terrainMap;
+    std::unordered_map<int, std::unordered_map<int, TerrainInfo>> terrainRowMap;
+
 
     void paintTexture(GLuint texture);
 
@@ -97,6 +116,7 @@ private:
     void createCone();
     void createCube();
     void createCylinder();
+    void createTerrain(float xOffset, float yOffset);
     // Device Correction Variables
     int m_devicePixelRatio;
     RenderData renderData;

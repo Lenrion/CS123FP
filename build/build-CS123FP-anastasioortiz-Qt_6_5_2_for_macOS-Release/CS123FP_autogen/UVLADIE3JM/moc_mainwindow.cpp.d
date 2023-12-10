@@ -1005,6 +1005,7 @@
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Cube.h \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Cylinder.h \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Sphere.h \
+  /Users/anastasioortiz/graphics/CS123FP/src/terraingenerator.h \
   /Users/anastasioortiz/graphics/CS123FP/src/utils/aspectratiowidget/aspectratiowidget.hpp \
   /Users/anastasioortiz/graphics/CS123FP/src/utils/scenedata.h \
   /Users/anastasioortiz/graphics/CS123FP/src/utils/sceneparser.h

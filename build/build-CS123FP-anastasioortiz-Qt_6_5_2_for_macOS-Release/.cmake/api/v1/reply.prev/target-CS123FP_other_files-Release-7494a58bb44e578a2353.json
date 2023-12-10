@@ -8,7 +8,8 @@
 			"_qt_internal_expose_source_file_to_ide",
 			"_qt_internal_process_resource",
 			"qt6_add_resources",
-			"set_property"
+			"set_property",
+			"target_sources"
 		],
 		"files" : 
 		[
@@ -23,7 +24,7 @@
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 75,
+				"line" : 76,
 				"parent" : 0
 			},
 			{
@@ -79,6 +80,12 @@
 				"file" : 0,
 				"line" : 1735,
 				"parent" : 9
+			},
+			{
+				"command" : 5,
+				"file" : 1,
+				"line" : 86,
+				"parent" : 0
 			}
 		]
 	},
@@ -98,7 +105,9 @@
 				0,
 				1,
 				2,
-				3
+				3,
+				4,
+				5
 			]
 		}
 	],
@@ -122,6 +131,16 @@
 		{
 			"backtrace" : 10,
 			"path" : "resources/shaders/pixel.frag",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 11,
+			"path" : "terrain.frag",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 11,
+			"path" : "terrain.vert",
 			"sourceGroupIndex" : 0
 		}
 	],

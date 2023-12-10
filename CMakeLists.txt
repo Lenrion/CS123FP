@@ -50,6 +50,7 @@ add_executable(${PROJECT_NAME}
         src/shapes/Cube.h
         src/shapes/Cylinder.h
         src/shapes/Sphere.h
+        src/terraingenerator.h src/terraingenerator.cpp
 )
 
 # GLM: this creates its library and allows you to `#include "glm/..."`
@@ -80,10 +81,13 @@ qt6_add_resources(${PROJECT_NAME} "Resources"
         resources/shaders/default.vert
         resources/shaders/pixel.vert
         resources/shaders/pixel.frag
+        resources/shaders/terrain.frag
+        resources/shaders/terrain.vert
 )
 
 target_sources(CS123FP_other_files
   PRIVATE
+
 )
 
 # GLEW: this provides support for Windows (including 64-bit)

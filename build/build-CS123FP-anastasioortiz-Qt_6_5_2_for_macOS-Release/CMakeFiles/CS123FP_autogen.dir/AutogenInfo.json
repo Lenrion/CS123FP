@@ -496,6 +496,12 @@
 			null
 		],
 		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/terraingenerator.h",
+			"MU",
+			"UVLADIE3JM/moc_terraingenerator.cpp",
+			null
+		],
+		[
 			"/Users/anastasioortiz/graphics/CS123FP/src/utils/aspectratiowidget/aspectratiowidget.hpp",
 			"MU",
 			"OWQMYEJWPR/moc_aspectratiowidget.cpp",
@@ -633,6 +639,11 @@
 		],
 		[
 			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/Sphere.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/terraingenerator.cpp",
 			"MU",
 			null
 		],
