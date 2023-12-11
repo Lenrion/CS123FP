@@ -9,10 +9,14 @@
 #include "shapes/Sphere.h"
 #include "shapes/Cylinder.h"
 #include "shapes/Cube.h"
+#include "shapes/Water.h"
+#include "shapes/skybox.h"
 #include "utils/shaderloader.h"
 #include "camera.h"
 #include "terraingenerator.h"
 #include <unordered_map>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 // ================== Project 5: Lights, Camera
 
@@ -55,6 +59,8 @@ void Realtime::finish() {
 //        glDeleteBuffers(size, &terrainMap[i].terrainVBO);
 //        glDeleteVertexArrays(size, &terrainMap[i].terrainVAO);
 //    }
+    glDeleteVertexArrays(size,&terrainRowMap[0][0].terrainVAO);
+    glDeleteBuffers(size,&terrainRowMap[0][0].terrainVBO);
 
 
 
@@ -81,6 +87,7 @@ void Realtime::initializeGL() {
     m_fbo_width = m_screen_width;
     m_fbo_height = m_screen_height;
 
+
     m_timer = startTimer(1000/60);
     m_elapsedTimer.start();
 
@@ -102,6 +109,8 @@ void Realtime::initializeGL() {
 
     m_filterShader = ShaderLoader::createShaderProgram(":/resources/shaders/pixel.vert", ":/resources/shaders/pixel.frag");
     shader = ShaderLoader::createShaderProgram(":/resources/shaders/default.vert", ":/resources/shaders/default.frag");
+    m_water_shader = ShaderLoader::createShaderProgram(":/resources/shaders/default.vert",":/resources/shaders/water.frag");
+    m_skybox_shader = ShaderLoader::createShaderProgram(":/resources/shaders/skybox.vert",":/resources/shaders/skybox.frag");
     m_terrainShader = ShaderLoader::createShaderProgram(":/resources/shaders/terrain.vert", ":/resources/shaders/terrain.frag");
 
     // Students: anything requiring OpenGL calls when the program starts should be done here
@@ -113,11 +122,14 @@ void Realtime::initializeGL() {
     sphere = Sphere();
     cube = Cube();
     terrain = TerrainGenerator();
+    skybox = Skybox();
     createSphere();
     createCone();
     createCylinder();
     createCube();
+    createSkybox();
     createTerrain(0,0);
+
 
     std::vector<GLfloat> fullscreen_quad_data =
         { //     POSITIONS    //
@@ -146,11 +158,53 @@ void Realtime::initializeGL() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-
-
     makeFBO();
 
+    std::vector<std::string> faces
+        {
+            "/Users/Lexi_Henrion/Graphics/CS123FP/resources/images/xpos.png",
+            "/Users/Lexi_Henrion/Graphics/CS123FP/resources/images/xneg.png",
+            "/Users/Lexi_Henrion/Graphics/CS123FP/resources/images/ypos.png", //
+            "/Users/Lexi_Henrion/Graphics/CS123FP/resources/images/yneg.png", //
+            "/Users/Lexi_Henrion/Graphics/CS123FP/resources/images/zpos.png",
+            "/Users/Lexi_Henrion/Graphics/CS123FP/resources/images/zneg.png"
+        };
+
+    m_skybox_texture = loadCubemap(faces);
+
 }
+
+GLuint Realtime::loadCubemap(std::vector<std::string> faces) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 3);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+                         );
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
+
 
 void Realtime::paintGL() {
 
@@ -162,7 +216,7 @@ void Realtime::paintGL() {
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(m_terrainShader);
+
     // Clear screen color and depth before painting
 //    GLint cameraWorldPosLocation  = glGetUniformLocation(shader, "cameraWorldPos");
 //    glUniform4fv(cameraWorldPosLocation,1.f,&(glm::inverse(m_view)*glm::vec4(0.f,0.f,0.f,1.f))[0]);
@@ -186,11 +240,49 @@ void Realtime::paintGL() {
 //    GLint kdLocation = glGetUniformLocation(shader, "k_d");
 //    glUniform1f(kdLocation, m_kd);
 
+    //The following chunk of code handles the skybox shader :)
+    glEnable(GL_DEPTH_CLAMP);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_skybox_texture);
+
+    glDepthMask(GL_FALSE);
+    glUseProgram(0);
+    glUseProgram(m_skybox_shader);
+
+    GLint skyboxUniform = glGetUniformLocation(m_skybox_shader, "skybox");
+    glUniform1i(skyboxUniform, 0);
+    //^texture binding and putting into skybox var in shader
+
+    glBindVertexArray(skyboxVAO);
+    glDrawArrays(GL_TRIANGLES, 0, skyboxData.size() / 6);
+    // Task 6: pass in m_model as a uniform into the shader program
+    GLint modelMatrixLocation = glGetUniformLocation(m_skybox_shader, "modelMatrix");
+    glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &m_model[0][0]);//get first index's address
+
+    GLint location = glGetUniformLocation(m_skybox_shader, "cameraPos");
+    glUniform3fv(location, 1, &m_camera.getCameraPos()[0]);
+
+    // Task 7: pass in m_view and m_proj
+    GLint viewMatrixLocation = glGetUniformLocation(m_skybox_shader, "viewMatrix");
+    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &m_view[0][0]);//get first index's address
+
+    GLint projectionMatrixLocation = glGetUniformLocation(m_skybox_shader, "projectionMatrix");
+    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &m_proj[0][0]);//get first index's address
+
+    GLint cameraPosLocation = glGetUniformLocation(m_skybox_shader, "worldSpaceCamera");
+    glUniform4fv(cameraPosLocation, 1, &glm::inverse(m_view)[3][0]);
+
+    glBindVertexArray(0);
+    glDepthMask(GL_TRUE);
+
 
     for(RenderShapeData shape: renderData.shapes){
+
         m_model = shape.ctm;
         glm::mat4 mvMatrix = m_view * m_model;
+        glUseProgram(m_terrainShader);
         glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "mvMatrix"), 1, GL_FALSE, &m_view[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "projMatrix"), 1, GL_FALSE, &m_proj[0][0]);
 //        GLint ambientLocation = glGetUniformLocation(shader, "ambient");
 //        glUniform4fv(ambientLocation,1.f, &shape.primitive.material.cAmbient[0]);
 
@@ -229,7 +321,6 @@ void Realtime::paintGL() {
 //                break;
 //            }
 
-
         for(int i = 0; i < 25 ; i++){
             int row = (i % 5);
             int col = i / 5;
@@ -243,8 +334,89 @@ void Realtime::paintGL() {
 
     //        glDrawArrays(GL_TRIANGLES, 0, terrainData.size() / 3);
             glBindVertexArray(0);
+
         }
 
+
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glUseProgram(m_water_shader);
+
+
+//        glBindVertexArray(skybox.m_sphereVAO);
+//        glDrawArrays(GL_TRIANGLES, 0, skybox.m_vertexData.size() / 6);
+//        glBindVertexArray(0);
+
+
+        glm::vec3 v5 = glm::vec3(0.f,  0.05f, 0.f); //bottom right back
+        glm::vec3 v6 = glm::vec3( 3.f,  0.05f, 0.f); //bottom left back
+
+        glm::vec3 v1 = glm::vec3(0.f,  0.05f, 3.f); //top left front
+        glm::vec3 v2 = glm::vec3(3.f,  0.05f, 3.f); //top right front
+        Water water = Water(v5,v6,v1,v2);
+        //water.updateParams(settings.shapeParameter1,settings.shapeParameter2);
+        glBindVertexArray(water.m_waterVAO);
+
+        glDrawArrays(GL_TRIANGLES, 0, water.m_vertexData.size() / 6);
+
+
+//                for (auto& pond : terrain.m_ponds) {
+//                    glBindVertexArray(pond.m_waterVAO);
+
+//                    int numVertices = pond.m_vertexData.size() / 3;
+//                    glDrawArrays(GL_TRIANGLES, 0, pond.m_vertexData.size() / 6);
+
+//                }
+
+
+
+                // Task 2: activate the shader program by calling glUseProgram with `m_shader`
+
+
+                // Task 6: pass in m_model as a uniform into the shader program
+                GLint modelMatrixLocation1 = glGetUniformLocation(m_water_shader, "modelMatrix");
+                glUniformMatrix4fv(modelMatrixLocation1, 1, GL_FALSE, &m_model[0][0]);//get first index's address
+
+                // Task 7: pass in m_view and m_proj
+                GLint viewMatrixLocation1 = glGetUniformLocation(m_water_shader, "viewMatrix");
+                glUniformMatrix4fv(viewMatrixLocation1, 1, GL_FALSE, &m_view[0][0]);//get first index's address
+
+                GLint projectionMatrixLocation1 = glGetUniformLocation(m_water_shader, "projectionMatrix");
+                glUniformMatrix4fv(projectionMatrixLocation1, 1, GL_FALSE, &m_proj[0][0]);//get first index's address
+
+                // Task 12: pass m_ka into the fragment shader as a uniform
+                GLint kaLocation1 = glGetUniformLocation(m_water_shader, "k_a");
+                glUniform1f(kaLocation1, m_ka);//get first index's address
+
+                // Task 13: pass light position and m_kd into the fragment shader as a uniform
+                GLint kdLocation1 = glGetUniformLocation(m_water_shader, "k_d");
+                glUniform1f(kdLocation1, m_kd);//get first index's address
+
+//                GLint lightPosLocation1 = glGetUniformLocation(m_water_shader, "lightPos");
+//                glUniform4fv(lightPosLocation1, 1, &m_lightPos[0]);
+
+                // Task 14: pass shininess, m_ks, and world-space camera position
+                GLint ksLocation1 = glGetUniformLocation(m_water_shader, "k_s");
+                glUniform1f(ksLocation1, m_ks);//get first index's address
+
+//                GLint shininessLocation1 = glGetUniformLocation(m_water_shader, "shininess");
+//                glUniform1f(shininessLocation1, m_shininess);//get first index's address
+
+                GLint cameraPosLocation1 = glGetUniformLocation(m_water_shader, "worldSpaceCamera");
+                glUniform4fv(cameraPosLocation1, 1, &glm::inverse(m_view)[3][0]);
+
+                //uniform vec4 cSpecular;uniform vec4 cAmbient;uniform vec4 cDiffuse;
+                GLint cSpecularLocation1 = glGetUniformLocation(m_water_shader, "cSpecular");
+                glUniform4fv(cSpecularLocation1, 1, &shape.primitive.material.cSpecular[0]);
+
+                GLint cAmbientLocation1 = glGetUniformLocation(m_water_shader, "cAmbient");
+                glUniform4fv(cAmbientLocation1, 1, &shape.primitive.material.cAmbient[0]);
+
+                GLint cDiffuseLocation1 = glGetUniformLocation(m_water_shader, "cDiffuse");
+                glUniform4fv(cDiffuseLocation1, 1, &shape.primitive.material.cDiffuse[0]);
+                glBindVertexArray(0);
+                glDisable(GL_BLEND);
 
     }
     glUseProgram(0);
@@ -474,6 +646,10 @@ void Realtime::timerEvent(QTimerEvent *event) {
 //    std::cout << "y: " << m_camera.getCameraPos().y << std::endl;
 //    std::cout << "z: " << m_camera.getCameraPos().z << std::endl;
 
+    skybox.m_position = m_camera.getCameraPos();
+    std::cout << "sphere pos: (" << skybox.m_position.x << ", " << skybox.m_position.y << ", " << skybox.m_position.z << ")" << std::endl;
+    createSkybox();
+
 
     // Use deltaTime and m_keyMap here to move around
     update(); // asks for a PaintGL() call to occur
@@ -560,6 +736,23 @@ void Realtime::createSphere(){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
  }
+
+void Realtime::createSkybox(){
+    skybox.updateParams(settings.shapeParameter1);
+    skyboxData = skybox.generateShape();
+    GLsizei size = 1;
+    glGenBuffers(size,&skyboxVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, skyboxData.size() * sizeof(GLfloat),skyboxData.data(), GL_STATIC_DRAW);
+    glGenVertexArrays(size, &skyboxVAO);
+    glBindVertexArray(skyboxVAO);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
 
 void Realtime::createCone(){
     cone.updateParams(settings.shapeParameter1, settings.shapeParameter2);

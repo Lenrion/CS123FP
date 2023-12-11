@@ -22,19 +22,32 @@ void Sphere::makeTile(glm::vec3 topLeft,
     glm::vec3 normalBottomLeft = glm::normalize(bottomLeft);
     glm::vec3 normalBottomRight = glm::normalize(bottomRight);
 
+//    insertVec3(m_vertexData, topLeft);
+//    insertVec3(m_vertexData,normalTopLeft);
+//    insertVec3(m_vertexData, bottomLeft);
+//    insertVec3(m_vertexData,normalBottomLeft);
+//    insertVec3(m_vertexData, bottomRight);
+//    insertVec3(m_vertexData,normalBottomRight);
+
+//    insertVec3(m_vertexData, bottomRight);
+//    insertVec3(m_vertexData,normalBottomRight);
+//    insertVec3(m_vertexData, topRight);
+//    insertVec3(m_vertexData,normalTopRight);
+//    insertVec3(m_vertexData, topLeft);
+//    insertVec3(m_vertexData,normalTopLeft);
     insertVec3(m_vertexData, topLeft);
-    insertVec3(m_vertexData,normalTopLeft);
-    insertVec3(m_vertexData, bottomLeft);
-    insertVec3(m_vertexData,normalBottomLeft);
+    insertVec3(m_vertexData, normalTopLeft);
+    insertVec3(m_vertexData, topRight);
+    insertVec3(m_vertexData, normalTopRight);
     insertVec3(m_vertexData, bottomRight);
-    insertVec3(m_vertexData,normalBottomRight);
+    insertVec3(m_vertexData, normalBottomRight);
 
     insertVec3(m_vertexData, bottomRight);
-    insertVec3(m_vertexData,normalBottomRight);
-    insertVec3(m_vertexData, topRight);
-    insertVec3(m_vertexData,normalTopRight);
+    insertVec3(m_vertexData, normalBottomRight);
+    insertVec3(m_vertexData, bottomLeft);
+    insertVec3(m_vertexData, normalBottomLeft);
     insertVec3(m_vertexData, topLeft);
-    insertVec3(m_vertexData,normalTopLeft);
+    insertVec3(m_vertexData, normalTopLeft);
 
 }
 

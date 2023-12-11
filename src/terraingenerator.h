@@ -2,16 +2,22 @@
 
 #include <vector>
 #include "glm/glm.hpp"
+#include "shapes/Water.h"
+#include <GL/glew.h>
+
 
 class TerrainGenerator
 {
 public:
     bool m_wireshade;
+    std::vector<Water> m_ponds;
 
     TerrainGenerator();
     ~TerrainGenerator();
     int getResolution() { return m_resolution; };
     std::vector<float> generateTerrain(float xOffset, float yOffset);
+    void createPond(const std::vector<std::vector<bool>>& isInValley);
+    std::vector<glm::vec3> identifyPerimeter(int x, int y);
 
 private:
 
