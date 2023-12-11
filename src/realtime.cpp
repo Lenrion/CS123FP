@@ -190,7 +190,7 @@ void Realtime::paintGL() {
     for(RenderShapeData shape: renderData.shapes){
         m_model = shape.ctm;
         glm::mat4 mvMatrix = m_view * m_model;
-        glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "mvMatrix"), 1, GL_FALSE, &m_view[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "mvMatrix"), 1, GL_FALSE, &mvMatrix[0][0]);
 //        GLint ambientLocation = glGetUniformLocation(shader, "ambient");
 //        glUniform4fv(ambientLocation,1.f, &shape.primitive.material.cAmbient[0]);
 
