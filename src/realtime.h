@@ -76,7 +76,7 @@ private:
     GLuint m_fullscreen_vao;
 
 
-    struct TerrainInfo{
+    struct TerrainPatch{
         GLuint terrainVBO;
         GLuint terrainVAO;
         int row;
@@ -98,8 +98,8 @@ private:
     float m_ks;
     float m_kd;
 
-    std::unordered_map<int, TerrainInfo> terrainMap;
-    std::unordered_map<int, std::unordered_map<int, TerrainInfo>> terrainRowMap;
+    std::unordered_map<int, TerrainPatch> terrainMap;
+    std::unordered_map<int, std::unordered_map<int, TerrainPatch>> terrainRowMap;
 
 
     void paintTexture(GLuint texture);

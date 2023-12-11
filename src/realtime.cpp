@@ -232,7 +232,7 @@ void Realtime::paintGL() {
 
         for(int i = 0; i < 25 ; i++){
             int row = (i % 5);
-            int col = i / 5;
+            int col = (i / 5);
             glBindVertexArray(terrainRowMap[row][col].terrainVAO);
 
             int res = terrain.getResolution();
@@ -625,14 +625,14 @@ void Realtime::createCube(){
 
 
 void Realtime::createTerrain(float xOffset, float yOffset){
-//    for(int i = 0; i < 25; i++){
-//        int row = (i / 5) + yOffset;
-//        int col = (i % 5) + xOffset;
-        if(terrainRowMap[0][0].terrainData.empty()){
-            TerrainInfo info;
+    for(int i = 0; i < 25; i++){
+        int row = (i / 5) ;
+        int col = (i % 5) ;
+        if(terrainRowMap[row][col].terrainData.empty()){
+            TerrainPatch info;
             GLuint terrainVBO;
             GLuint terrainVAO;
-            std::vector<float> terrainData = terrain.generateTerrain(0,0);
+            std::vector<float> terrainData = terrain.generateTerrain(row,col);
             GLsizei size = 1;
             glGenBuffers(size,&terrainVBO);
             glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
@@ -653,10 +653,10 @@ void Realtime::createTerrain(float xOffset, float yOffset){
             glBindVertexArray(0);
             info.terrainVAO = terrainVAO;
             info.terrainVBO = terrainVBO;
-            info.row = 0 + yOffset;
-            info.col = 0 + xOffset;
+            info.row = row ;
+            info.col = col ;
             info.terrainData = terrainData;
-            terrainRowMap[0][0] = info;
+            terrainRowMap[row][col] = info;
         }
     }
-//}
+}
