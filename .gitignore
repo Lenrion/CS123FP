@@ -1,0 +1,4 @@
+.DS_Store
+resources/.DS_Store
+.gitignore.save
+CMakeLists.txt.autosave
