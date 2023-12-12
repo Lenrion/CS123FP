@@ -1,0 +1,15 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="resources/shaders/default.frag">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/default.frag</file>
+    <file alias="resources/shaders/default.vert">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/default.vert</file>
+    <file alias="resources/shaders/pixel.vert">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/pixel.vert</file>
+    <file alias="resources/shaders/pixel.frag">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/pixel.frag</file>
+    <file alias="resources/shaders/terrain.frag">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/terrain.frag</file>
+    <file alias="resources/shaders/terrain.vert">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/terrain.vert</file>
+    <file alias="resources/shaders/water.frag">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/water.frag</file>
+    <file alias="resources/shaders/water.vert">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/water.vert</file>
+    <file alias="resources/shaders/skybox.vert">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/skybox.vert</file>
+    <file alias="resources/shaders/skybox.frag">/Users/Lexi_Henrion/Graphics/CS123FP/resources/shaders/skybox.frag</file>
+  </qresource>
+</RCC>
+

@@ -9,10 +9,14 @@
 #include "shapes/Sphere.h"
 #include "shapes/Cylinder.h"
 #include "shapes/Cube.h"
+#include "shapes/Water.h"
+#include "shapes/skybox.h"
 #include "utils/shaderloader.h"
 #include "camera.h"
 #include "terraingenerator.h"
 #include <unordered_map>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 // ================== Project 5: Lights, Camera
 
@@ -51,10 +55,12 @@ void Realtime::finish() {
     glDeleteVertexArrays(size, &cylinderVAO);
     glDeleteBuffers(size, &cubeVBO);
     glDeleteVertexArrays(size, &cubeVAO);
-//    for(int i = 0; i < terrainRowMap.size(); i++){
-//        glDeleteBuffers(size, &terrainMap[i].terrainVBO);
-//        glDeleteVertexArrays(size, &terrainMap[i].terrainVAO);
-//    }
+    for(int i = 0; i < terrainRowMap.size(); i++){
+        for(int j = 0; j < terrainMap.size(); j++){
+        glDeleteBuffers(size, &terrainRowMap[i][j].terrainVBO);
+        glDeleteVertexArrays(size, &terrainRowMap[i][j].terrainVAO);
+        }
+    }
 
 
 
@@ -81,6 +87,7 @@ void Realtime::initializeGL() {
     m_fbo_width = m_screen_width;
     m_fbo_height = m_screen_height;
 
+
     m_timer = startTimer(1000/60);
     m_elapsedTimer.start();
 
@@ -102,6 +109,8 @@ void Realtime::initializeGL() {
 
     m_filterShader = ShaderLoader::createShaderProgram(":/resources/shaders/pixel.vert", ":/resources/shaders/pixel.frag");
     shader = ShaderLoader::createShaderProgram(":/resources/shaders/default.vert", ":/resources/shaders/default.frag");
+    m_water_shader = ShaderLoader::createShaderProgram(":/resources/shaders/default.vert",":/resources/shaders/water.frag");
+    m_skybox_shader = ShaderLoader::createShaderProgram(":/resources/shaders/skybox.vert",":/resources/shaders/skybox.frag");
     m_terrainShader = ShaderLoader::createShaderProgram(":/resources/shaders/terrain.vert", ":/resources/shaders/terrain.frag");
 
     // Students: anything requiring OpenGL calls when the program starts should be done here
@@ -113,11 +122,15 @@ void Realtime::initializeGL() {
     sphere = Sphere();
     cube = Cube();
     terrain = TerrainGenerator();
+    skybox = Skybox();
+//    m_tree = Tree(glm::vec3(0,0,0), glm::vec3(0,1,0), glm::vec3(0.3f,0.3f,0.3f));
     createSphere();
     createCone();
     createCylinder();
     createCube();
+    createSkybox();
     createTerrain(0,0);
+
 
     std::vector<GLfloat> fullscreen_quad_data =
         { //     POSITIONS    //
@@ -146,11 +159,53 @@ void Realtime::initializeGL() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-
-
     makeFBO();
 
+    std::vector<std::string> faces
+        {
+            "../resources/images/xpos.png",
+            "../resources/images/xneg.png",
+            "../resources/images/ypos.png", //
+            "../resources/images/yneg.png", //
+            "../resources/images/zpos.png",
+            "../resources/images/zneg.png"
+        };
+
+    m_skybox_texture = loadCubemap(faces);
+
 }
+
+GLuint Realtime::loadCubemap(std::vector<std::string> faces) {
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 3);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+                         );
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
+
 
 void Realtime::paintGL() {
 
@@ -161,19 +216,25 @@ void Realtime::paintGL() {
     m_proj = m_camera.getProjectionMatrix();
 
 
+    glUseProgram(shader);
+
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(m_terrainShader);
+
     // Clear screen color and depth before painting
 //    GLint cameraWorldPosLocation  = glGetUniformLocation(shader, "cameraWorldPos");
 //    glUniform4fv(cameraWorldPosLocation,1.f,&(glm::inverse(m_view)*glm::vec4(0.f,0.f,0.f,1.f))[0]);
 
-//    GLint viewMatrixLocation = glGetUniformLocation(shader, "viewMatrix");
-//    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &m_view[0][0]);
+//    glUniformMatrix4fv(glGetUniformLocation(shader, "viewMatrix"), 1, GL_FALSE, &m_view[0][0]);
+//    glUniformMatrix4fv(glGetUniformLocation(shader, "inverseTransposeMatrix"), 1, GL_FALSE, &glm::inverse(glm::transpose(m_tree.m_modelMatrix))[0][0]);    glUniformMatrix4fv(glGetUniformLocation(shader, "viewMatrix"), 1, GL_FALSE, &m_view[0][0]);
+//    glUniformMatrix4fv(glGetUniformLocation(shader, "modelMatrix"), 1, GL_FALSE, &m_tree.m_modelMatrix[0][0]);
+//    glUniformMatrix4fv(glGetUniformLocation(shader, "projectionMatrix"), 1, GL_FALSE, &m_proj[0][0]);
 
-//    GLint projectionMatrixLocation = glGetUniformLocation(shader, "projectionMatrix");
-//    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &m_proj[0][0]);
-
-    glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "projMatrix"), 1, GL_FALSE, &m_proj[0][0]);
+//    glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "projMatrix"), 1, GL_FALSE, &m_proj[0][0]);
+//    glBindVertexArray(m_tree.m_treeVao);
+//    glDrawArrays(GL_TRIANGLES, 0, m_tree.generateShape().size() / 6);
+//    glBindVertexArray(0);
+//    glUseProgram(0);
 
 
 //    GLint ksLocation = glGetUniformLocation(shader, "k_s");
@@ -186,11 +247,49 @@ void Realtime::paintGL() {
 //    GLint kdLocation = glGetUniformLocation(shader, "k_d");
 //    glUniform1f(kdLocation, m_kd);
 
+    //The following chunk of code handles the skybox shader :)
+    glEnable(GL_DEPTH_CLAMP);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_skybox_texture);
+
+    glDepthMask(GL_FALSE);
+    glUseProgram(0);
+    glUseProgram(m_skybox_shader);
+
+    GLint skyboxUniform = glGetUniformLocation(m_skybox_shader, "skybox");
+    glUniform1i(skyboxUniform, 0);
+    //^texture binding and putting into skybox var in shader
+
+    glBindVertexArray(skyboxVAO);
+    glDrawArrays(GL_TRIANGLES, 0, skyboxData.size() / 6);
+    // Task 6: pass in m_model as a uniform into the shader program
+    GLint modelMatrixLocation = glGetUniformLocation(m_skybox_shader, "modelMatrix");
+    glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &m_model[0][0]);//get first index's address
+
+    GLint location = glGetUniformLocation(m_skybox_shader, "cameraPos");
+    glUniform3fv(location, 1, &m_camera.getCameraPos()[0]);
+
+    // Task 7: pass in m_view and m_proj
+    GLint viewMatrixLocation = glGetUniformLocation(m_skybox_shader, "viewMatrix");
+    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &m_view[0][0]);//get first index's address
+
+    GLint projectionMatrixLocation = glGetUniformLocation(m_skybox_shader, "projectionMatrix");
+    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &m_proj[0][0]);//get first index's address
+
+    GLint cameraPosLocation = glGetUniformLocation(m_skybox_shader, "worldSpaceCamera");
+    glUniform4fv(cameraPosLocation, 1, &glm::inverse(m_view)[3][0]);
+
+    glBindVertexArray(0);
+    glDepthMask(GL_TRUE);
+
 
     for(RenderShapeData shape: renderData.shapes){
+
         m_model = shape.ctm;
         glm::mat4 mvMatrix = m_view * m_model;
-        glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "mvMatrix"), 1, GL_FALSE, &mvMatrix[0][0]);
+        glUseProgram(m_terrainShader);
+        glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "mvMatrix"), 1, GL_FALSE, &m_view[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "projMatrix"), 1, GL_FALSE, &m_proj[0][0]);
 //        GLint ambientLocation = glGetUniformLocation(shader, "ambient");
 //        glUniform4fv(ambientLocation,1.f, &shape.primitive.material.cAmbient[0]);
 
@@ -228,22 +327,26 @@ void Realtime::paintGL() {
 //                glDrawArrays(GL_TRIANGLES, 0, coneData.size() / 3);
 //                break;
 //            }
-
-
+        glm::vec3 cameraPos = m_camera.getCameraPos();
         for(int i = 0; i < 25 ; i++){
-            int row = (i % 5);
-            int col = (i / 5);
+            glUseProgram(m_terrainShader);
+            int row = (i % 5) - 2 + cameraPos.z;
+            int col = (i / 5) - 2 + cameraPos.x;
             glBindVertexArray(terrainRowMap[row][col].terrainVAO);
-
             int res = terrain.getResolution();
-
-
             glPolygonMode(GL_FRONT_AND_BACK,false);
             glDrawArrays(GL_TRIANGLES, 0, res * res * 6);
-
-    //        glDrawArrays(GL_TRIANGLES, 0, terrainData.size() / 3);
             glBindVertexArray(0);
+            glUseProgram(0);
+            paintTrees(terrainRowMap[row][col].trees);
+            if(!terrainRowMap[row][col].pond.waterData.empty()){
+                paintWater(terrainRowMap[row][col].pond);
+                std::cout << "pond"<< std::endl;
+            }
         }
+        glUseProgram(0);
+
+
 
 
     }
@@ -263,7 +366,6 @@ void Realtime::paintGL() {
     glUniform1i(glGetUniformLocation(m_filterShader,"height"), m_screen_height);
 
     glBindVertexArray(m_fullscreen_vao);
-    // Task 10: Bind "texture" to slot 0
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,m_fbo_texture);
     glUniform1i(glGetUniformLocation(m_filterShader,"tex"), 0);
@@ -273,6 +375,56 @@ void Realtime::paintGL() {
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
     glUseProgram(0);
+}
+
+
+void Realtime::paintWater(TerrainGenerator::WaterInfo water){
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glUseProgram(m_water_shader);
+    glBindVertexArray(water.waterVAO);
+    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "modelMatrix"), 1, GL_FALSE, &m_model[0][0]);//get first index's address
+    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "viewMatrix"), 1, GL_FALSE, &m_view[0][0]);//get first index's address
+    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "projectionMatrix"), 1, GL_FALSE, &m_proj[0][0]);//get first index's address
+    glUniform1f(glGetUniformLocation(m_water_shader, "k_a"), m_ka);//get first index's address
+    glUniform1f(glGetUniformLocation(m_water_shader, "k_d"), m_kd);
+    glUniform1f(glGetUniformLocation(m_water_shader, "k_s"), m_ks);//get first index's address
+
+
+
+    glm::vec4 cSpecular = glm::vec4(1.f);
+    glm::vec4 cAmbient = glm::vec4(1.f);
+    glm::vec4 cDiffuse = glm::vec4(0.f, 0.f, 1.f, 1.f);
+    GLint cameraPosLocation1 = glGetUniformLocation(m_water_shader, "worldSpaceCamera");
+    glUniform4fv(cameraPosLocation1, 1, &glm::inverse(m_view)[3][0]);
+    //changed these three to not take in the json values of a shape.
+    glUniform4fv(glGetUniformLocation(m_water_shader, "cSpecular"), 1, &cSpecular[0]);
+    glUniform4fv(glGetUniformLocation(m_water_shader, "cAmbient"), 1, &cAmbient[0]);
+    glUniform4fv(glGetUniformLocation(m_water_shader, "cDiffuse"), 1, &cDiffuse[0]);
+
+    glDrawArrays(GL_TRIANGLES, 0, water.waterData.size() / 6);
+    glBindVertexArray(0);
+    glDisable(GL_BLEND);
+    glUseProgram(0);
+}
+
+void Realtime::paintTrees(std::vector<TerrainGenerator::TreeInfo> trees){
+    glUseProgram(shader);
+    std::cout<< trees.size() << std::endl;
+    for(TerrainGenerator::TreeInfo tree: trees){
+                GLint cameraWorldPosLocation  = glGetUniformLocation(shader, "cameraWorldPos");
+                glUniform4fv(cameraWorldPosLocation,1.f,&(glm::inverse(m_view)*glm::vec4(0.f,0.f,0.f,1.f))[0]);
+                glUniformMatrix4fv(glGetUniformLocation(shader, "viewMatrix"), 1, GL_FALSE, &m_view[0][0]);
+                glUniformMatrix4fv(glGetUniformLocation(shader, "inverseTransposeMatrix"), 1, GL_FALSE, &glm::inverse(glm::transpose(tree.modelMat))[0][0]);
+                glUniformMatrix4fv(glGetUniformLocation(shader, "modelMatrix"), 1, GL_FALSE, &tree.modelMat[0][0]);
+                glUniformMatrix4fv(glGetUniformLocation(shader, "projectionMatrix"), 1, GL_FALSE, &m_proj[0][0]);
+                glBindVertexArray(tree.treeVAO);
+                glDrawArrays(GL_TRIANGLES, 0, tree.treeData.size() / 6);
+                glBindVertexArray(0);
+
+    }
+    glUseProgram(0);
+
 }
 
 
@@ -399,7 +551,8 @@ void Realtime::settingsChanged() {
        createCone();
        createCylinder();
        createCube();
-       createTerrain(0,0);
+
+
        update(); // asks for a PaintGL() call to occur
     }
 }
@@ -434,12 +587,16 @@ void Realtime::mouseMoveEvent(QMouseEvent *event) {
         int deltaX = posX - m_prev_mouse_pos.x;
         int deltaY = posY - m_prev_mouse_pos.y;
         m_prev_mouse_pos = glm::vec2(posX, posY);
-        float x = deltaX / 25.f;
-        float y = deltaY / 25.f;
-        m_camera.rotateCamera(x, y);
+
+
+        m_camera.rotateCamera(deltaX, deltaY);
         update();
     }
 }
+
+
+
+
 
 void Realtime::timerEvent(QTimerEvent *event) {
 
@@ -470,9 +627,10 @@ void Realtime::timerEvent(QTimerEvent *event) {
     }
 
     m_camera.updateCameraPos(movement * deltaTime);
-//    std::cout << "x: " << m_camera.getCameraPos().x << std::endl;
-//    std::cout << "y: " << m_camera.getCameraPos().y << std::endl;
-//    std::cout << "z: " << m_camera.getCameraPos().z << std::endl;
+
+    skybox.m_position = m_camera.getCameraPos();
+    createSkybox();
+    createTerrain(m_camera.getCameraPos().z,m_camera.getCameraPos().x);
 
 
     // Use deltaTime and m_keyMap here to move around
@@ -561,6 +719,23 @@ void Realtime::createSphere(){
     glBindVertexArray(0);
  }
 
+void Realtime::createSkybox(){
+    skybox.updateParams(settings.shapeParameter1);
+    skyboxData = skybox.generateShape();
+    GLsizei size = 1;
+    glGenBuffers(size,&skyboxVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, skyboxData.size() * sizeof(GLfloat),skyboxData.data(), GL_STATIC_DRAW);
+    glGenVertexArrays(size, &skyboxVAO);
+    glBindVertexArray(skyboxVAO);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
 void Realtime::createCone(){
     cone.updateParams(settings.shapeParameter1, settings.shapeParameter2);
     coneData = cone.generateShape();
@@ -626,8 +801,8 @@ void Realtime::createCube(){
 
 void Realtime::createTerrain(float xOffset, float yOffset){
     for(int i = 0; i < 25; i++){
-        int row = (i / 5) ;
-        int col = (i % 5) ;
+        int row = (i / 5) - 2 + xOffset;
+        int col = (i % 5) - 2 + yOffset;
         if(terrainRowMap[row][col].terrainData.empty()){
             TerrainPatch info;
             GLuint terrainVBO;
@@ -656,6 +831,8 @@ void Realtime::createTerrain(float xOffset, float yOffset){
             info.row = row ;
             info.col = col ;
             info.terrainData = terrainData;
+            info.trees = terrain.getTrees();
+            info.pond = terrain.m_ponds;
             terrainRowMap[row][col] = info;
         }
     }

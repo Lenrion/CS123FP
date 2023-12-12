@@ -1,6 +1,7 @@
 #pragma once
 
 // Defined before including GLEW to suppress deprecation messages on macOS
+#include "shapes/skybox.h"
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #endif
@@ -18,6 +19,7 @@
 #include "shapes/Cone.h"
 #include "shapes/Cylinder.h"
 #include "shapes/Cube.h"
+#include "shapes/Tree.h"
 #include "camera.h"
 #include "terraingenerator.h"
 
@@ -46,6 +48,7 @@ private:
     void mouseMoveEvent(QMouseEvent *event) override;
     void timerEvent(QTimerEvent *event) override;
     void makeFBO();
+    GLuint loadCubemap(std::vector<std::string> faces);
 
     GLuint sphereVBO;
     GLuint sphereVAO;
@@ -55,12 +58,16 @@ private:
     GLuint coneVAO;
     GLuint cubeVBO;
     GLuint cubeVAO;
+    GLuint skyboxVBO;
+    GLuint skyboxVAO;
 
 
     GLuint m_defaultFBO;
     GLuint m_fbo;
     GLuint m_fbo_texture;
     GLuint m_fbo_renderbuffer;
+    GLuint m_skybox_texture;
+
     int m_fbo_width;
     int m_fbo_height;
     int m_screen_width;
@@ -71,6 +78,7 @@ private:
     std::vector<float> coneData;
     std::vector<float> cylinderData;
     std::vector<float> cubeData;
+    std::vector<float> skyboxData;
 
     GLuint m_fullscreen_vbo;
     GLuint m_fullscreen_vao;
@@ -82,18 +90,24 @@ private:
         int row;
         int col;
         std::vector<float> terrainData;
+        std::vector<TerrainGenerator::TreeInfo> trees;
+        TerrainGenerator::WaterInfo pond;
     };
 
 
     GLuint shader = 0;
     GLuint m_filterShader;
     GLuint m_terrainShader;
+    GLuint m_water_shader;
+    GLuint m_skybox_shader;
 
     Cone cone;
     Cube cube;
     Cylinder cylinder;
+    Skybox skybox;
     Sphere sphere;
     TerrainGenerator terrain;
+    Tree m_tree;
     float m_ka;
     float m_ks;
     float m_kd;
@@ -103,6 +117,8 @@ private:
 
 
     void paintTexture(GLuint texture);
+    void paintTrees(std::vector<TerrainGenerator::TreeInfo> trees);
+    void paintWater(TerrainGenerator::WaterInfo water);
 
     // Tick Related Variables
     int m_timer;                                        // Stores timer which attempts to run ~60 times per second
@@ -117,6 +133,8 @@ private:
     void createCube();
     void createCylinder();
     void createTerrain(float xOffset, float yOffset);
+    void createSkybox();
+
     // Device Correction Variables
     int m_devicePixelRatio;
     RenderData renderData;

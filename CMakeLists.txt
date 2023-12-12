@@ -44,13 +44,23 @@ add_executable(${PROJECT_NAME}
         src/utils/aspectratiowidget/aspectratiowidget.hpp
         src/shapes/Cone.cpp
         src/shapes/Cube.cpp
+        src/shapes/Water.cpp
         src/shapes/Cylinder.cpp
         src/shapes/Sphere.cpp
         src/shapes/Cone.h
         src/shapes/Cube.h
         src/shapes/Cylinder.h
+        src/shapes/Water.h
         src/shapes/Sphere.h
+        src/shapes/LSystem.h
+        src/shapes/LSystem.cpp
+        src/shapes/tree.h
+        src/shapes/tree.cpp
         src/terraingenerator.h src/terraingenerator.cpp
+        src/shapes/skybox.h src/shapes/skybox.cpp
+        src/stb_image.h
+
+
 )
 
 # GLM: this creates its library and allows you to `#include "glm/..."`
@@ -83,10 +93,17 @@ qt6_add_resources(${PROJECT_NAME} "Resources"
         resources/shaders/pixel.frag
         resources/shaders/terrain.frag
         resources/shaders/terrain.vert
+        resources/shaders/water.frag
+        resources/shaders/water.vert
+        resources/shaders/skybox.vert
+        resources/shaders/skybox.frag
+
+
 )
 
 target_sources(CS123FP_other_files
   PRIVATE
+
 
 )
 

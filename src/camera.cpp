@@ -79,22 +79,39 @@ void Camera::updateCameraPos(glm::vec3 offset){
 
 void Camera::rotateCamera(float deltaX, float deltaY){
 
-    glm::vec3 u = glm::cross(look, up);
-    glm::mat3 xRotationMatrix = glm::mat3( cos(deltaX), 0.f                             , -sin(deltaX),
-                                           0.f        , cos(deltaX) + (1 - cos(deltaX)) , 0.f,
-                                          sin(deltaX) , 0.f                             ,  cos(deltaX) );
 
 
+    // Use deltaX and deltaY here to rotate
+    glm::vec3 axis = glm::cross(look, up);
 
-    glm::mat3 yRotationMatrix = glm::mat3(  cos(deltaY) + u.x *u.x * (1 - cos(deltaY))    , u.x*u.y*(1-cos(deltaY))+u.z*sin(deltaY)           , u.x*u.z*(1-cos(deltaY))-u.y*sin(deltaY),
-                                            u.x*u.y*(1-cos(deltaY))-u.z*sin(deltaY)       , cos(deltaY) + u.y*u.y*(1 - cos(deltaY))           , u.y*u.z*(1-cos(deltaY) + u.x*sin(deltaY)),
-                                            u.x*u.z*(1-cos(deltaY))+ u.y* sin(deltaY)     , u.y * u.z* (1 - cos(deltaY)) -u.x * sin(deltaY)   , cos(deltaY) + u.z *u.z*(1-cos(deltaY)));
-    look = glm::normalize(look * xRotationMatrix *yRotationMatrix);
-    up = glm::normalize(up *  xRotationMatrix * yRotationMatrix);
+    axis = glm::normalize(axis);
 
+    float pixelsToDegrees = 1.0f; // rotation speed
+
+    float thetaX = glm::radians(deltaX * pixelsToDegrees); //horizontal
+    float thetaY = glm::radians(deltaY * pixelsToDegrees); //vertical
+
+    glm::mat4 rotX = constructRotationMatrix(up, thetaX);
+    glm::mat4 rotY = constructRotationMatrix(axis, thetaY);
+
+    // apply
+    look = glm::normalize((rotY * rotX) * glm::vec4(look,0.f));
     calculateViewMatrix();
     calculateProjectionMatrix();
 }
+
+glm::mat4 Camera::constructRotationMatrix(const glm::vec3& axis, float theta) {
+
+    float x = axis.x;
+    float y = axis.y;
+    float z = axis.z;
+    glm::mat4 rot = glm::mat4(cos(theta) + x*x*(1.f-cos(theta)), x*y*(1.f-cos(theta)) - z*sin(theta), x*z*(1.f-cos(theta))+y*sin(theta), 0,
+                              x*y*(1.f-cos(theta))+z*sin(theta), cos(theta)+y*y*(1-cos(theta)), y*z*(1.f-cos(theta) - x*sin(theta)), 0,
+                              x*z*(1.f-cos(theta))-y*(sin(theta)), y*z*(1.f-cos(theta))+x*(sin(theta)), cos(theta)+z*z*(1.f-cos(theta)), 0,
+                              0,0,0,1.f);
+    return rot;
+}
+
 
 
 void Camera::calculateProjectionMatrix(){

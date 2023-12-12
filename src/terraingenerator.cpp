@@ -1,23 +1,21 @@
 #include "terraingenerator.h"
 
 #include <cmath>
+#include <iostream>
+#include <stack>
 #include "glm/glm.hpp"
+#include "shapes/Water.h"
+#include <GL/glew.h>
+#include <random>
 
 // Constructor
 TerrainGenerator::TerrainGenerator()
 {
-    // Task 8: turn off wireframe shading
-    m_wireshade = false; // STENCIL CODE
-    // m_wireshade = false; // TA SOLUTION
 
-    // Define resolution of terrain generation
-    m_resolution = 100;
-
-    // Generate random vector lookup table
+    m_wireshade = false;
+    m_resolution = 50;
     m_lookupSize = 1024;
     m_randVecLookup.reserve(m_lookupSize);
-
-    // Initialize random number generator
     std::srand(1230);
 
     // Populate random vector lookup table
@@ -46,7 +44,12 @@ void addPointToVector(glm::vec3 point, std::vector<float>& vector) {
 // Generates the geometry of the output triangle mesh
 std::vector<float> TerrainGenerator::generateTerrain(float xOffset, float yOffset) {
     std::vector<float> verts;
+    m_trees.clear();
+    m_ponds.waterData.clear();
     verts.reserve(m_resolution * m_resolution * 6);
+
+    std::vector<std::vector<bool>> isInValley(m_resolution, std::vector<bool>(m_resolution, false));
+    float scaleFactor =1.0f;  // scale terrain
 
     for(int x = 0; x < m_resolution; x++) {
         for(int y = 0; y < m_resolution; y++) {
@@ -56,20 +59,17 @@ std::vector<float> TerrainGenerator::generateTerrain(float xOffset, float yOffse
             int x2 = x + 1;
             int y2 = y + 1;
 
-            glm::vec3 p1 = getPosition(x1,y1,xOffset, yOffset);
-            glm::vec3 p2 = getPosition(x2,y1,xOffset, yOffset);
-            glm::vec3 p3 = getPosition(x2,y2,xOffset, yOffset);
-            glm::vec3 p4 = getPosition(x1,y2,xOffset, yOffset);
+            glm::vec3 p1 = getPosition(x1 * scaleFactor, y1 * scaleFactor, xOffset, yOffset);
+            glm::vec3 p2 = getPosition(x2 * scaleFactor, y1 * scaleFactor, xOffset, yOffset);
+            glm::vec3 p3 = getPosition(x2 * scaleFactor, y2 * scaleFactor, xOffset, yOffset);
+            glm::vec3 p4 = getPosition(x1 * scaleFactor, y2 * scaleFactor, xOffset, yOffset);
 
-            glm::vec3 n1 = getNormal(x1,y1,xOffset, yOffset);
-            glm::vec3 n2 = getNormal(x2,y1, xOffset, yOffset);
-            glm::vec3 n3 = getNormal(x2,y2, xOffset, yOffset);
-            glm::vec3 n4 = getNormal(x1,y2, xOffset, yOffset);
+            glm::vec3 n1 = getNormal(x1* scaleFactor,y1* scaleFactor,xOffset, yOffset);
+            glm::vec3 n2 = getNormal(x2* scaleFactor,y1* scaleFactor, xOffset, yOffset);
+            glm::vec3 n3 = getNormal(x2* scaleFactor,y2* scaleFactor, xOffset, yOffset);
+            glm::vec3 n4 = getNormal(x1* scaleFactor,y2* scaleFactor, xOffset, yOffset);
 
-            // tris 1
-            // x1y1z1
-            // x2y1z2
-            // x2y2z3
+
             addPointToVector(p1, verts);
             addPointToVector(n1, verts);
             addPointToVector(getColor(n1, p1), verts);
@@ -82,10 +82,6 @@ std::vector<float> TerrainGenerator::generateTerrain(float xOffset, float yOffse
             addPointToVector(n3, verts);
             addPointToVector(getColor(n3, p3), verts);
 
-            // tris 2
-            // x1y1z1
-            // x2y2z3
-            // x1y2z4
             addPointToVector(p1, verts);
             addPointToVector(n1, verts);
             addPointToVector(getColor(n1, p1), verts);
@@ -97,10 +93,50 @@ std::vector<float> TerrainGenerator::generateTerrain(float xOffset, float yOffse
             addPointToVector(p4, verts);
             addPointToVector(n4, verts);
             addPointToVector(getColor(n4, p4), verts);
+
+            if (p1.z < m_waterHeight || p2.z < m_waterHeight || p3.z < m_waterHeight || p4.z < m_waterHeight) {
+                isInValley[x][y] = true;
+            } else{
+                generateTrees(p3);
+            }
+
         }
     }
+    createPond(isInValley, xOffset, yOffset);
     return verts;
 }
+
+void TerrainGenerator::createPond(const std::vector<std::vector<bool>>& isInValley, int xOffset, int yOffset) {
+    // Find the minimum and maximum x and y coordinates
+    int minX = m_resolution, minY = m_resolution, maxX = 0, maxY = 0;
+    for (int x = 0; x < m_resolution; x++) {
+        for (int y = 0; y < m_resolution; y++) {
+            if (isInValley[x][y]) {
+                minX = std::min(minX, x);
+                minY = std::min(minY, y);
+                maxX = std::max(maxX, x);
+                maxY = std::max(maxY, y);
+            }
+        }
+    }
+
+    // Calculate the corners of the plane
+    glm::vec3 v1 = glm::vec3((minY / (float)m_resolution) + yOffset, m_waterHeight, (minX / (float)m_resolution) + xOffset); // bottom left back
+    glm::vec3 v2 = glm::vec3((maxY / (float)m_resolution) + yOffset, m_waterHeight, (minX / (float)m_resolution) + xOffset); // bottom right back
+    glm::vec3 v3 = glm::vec3((minY / (float)m_resolution) + yOffset, m_waterHeight, (maxX / (float)m_resolution)+ xOffset); // top left front
+    glm::vec3 v4 = glm::vec3((maxY / (float)m_resolution) + yOffset, m_waterHeight, (maxX / (float)m_resolution) + xOffset); // top right front
+
+    // Create a Water object with these corners
+    Water water(v1, v2, v3, v4);
+    m_ponds.waterVAO = water.m_waterVAO;
+    m_ponds.waterVBO = water.m_waterVBO;
+    m_ponds.waterData = water.generateShape();
+
+    // Store the Water object for later use
+
+}
+
+
 
 // Samples the (infinite) random vector grid at (row, col)
 glm::vec2 TerrainGenerator::sampleRandomVector(int row, int col)
@@ -121,7 +157,6 @@ glm::vec3 TerrainGenerator::getPosition(int row, int col, float xOffset, float y
     return glm::vec3(x,y,z);
 }
 
-// ================== Students, please focus on the code below this point
 
 float ease(float alpha){
     return 3.f* (alpha * alpha) - 2.f* alpha * alpha * alpha;
@@ -129,12 +164,8 @@ float ease(float alpha){
 
 
 // Helper for computePerlin() and, possibly, getColor()
-
 float interpolate(float A, float B, float alpha) {
-    // Task 4: implement your easing/interpolation function below
     float output = A + (ease(alpha) * (B - A));
-
-    // Return 0 as placeholder
     return output;
 }
 
@@ -144,17 +175,24 @@ float interpolate(float A, float B, float alpha) {
 // Takes a normalized (x, y) position, in range [0,1)
 // Returns a height value, z, by sampling a noise function
 float TerrainGenerator::getHeight(float x, float y) {
-
+    if(x < 0){
+        x *= -1;
+    }
+    if(y < 0){
+        y *= -1;
+    }
 
     // Task 6: modify this call to produce noise of a different frequency
-    float z = computePerlin(x * 16, y * 16) / 16;
+    float z = computePerlin(x * 4, y * 4) / 4;
 
-    // Task 7: combine multiple different octaves of noise to produce fractal perlin noise
-    float a = computePerlin(x * 8, y * 8) / 8;
-    float b = computePerlin(x * 2, y * 2) / 2;
-    float c = computePerlin(x * 4, y * 4) / 4;
-    // Return 0 as placeholder
-    float d = b +c;
+    // Combine multiple octaves of noise to produce fractal Perlin noise
+    float a = computePerlin(x * 2, y * 2) / 2;
+    float b = computePerlin(x * 1, y * 1) / 1;
+    float c = computePerlin(x * 0.5f, y * 0.5f) / 0.5f;
+
+    // Combine the octaves
+    float d = a + b + c;
+
     return d;
 }
 
@@ -187,20 +225,16 @@ glm::vec3 TerrainGenerator::getNormal(int row, int col, float xOffset, float yOf
 
 // Computes color of vertex using normal and, optionally, position
 glm::vec3 TerrainGenerator::getColor(glm::vec3 normal, glm::vec3 position) {
-    // Task 10: compute color as a function of the normal and position
-    uint8_t r = normal[0] * 255;
-    uint8_t g = normal[1] * 255;
-    uint8_t b = normal[2] * 255;
-    glm::vec3 color = glm::vec3(1,1,1);
+    glm::vec3 green = glm::vec3(0.199,0.196,0.339);
+    glm::vec3 brown = glm::vec3(0.18,0.49,0.306);
     glm::vec3 upward_direction = glm::vec3(0, 1, 0);
 
-    if(glm::dot(normal,upward_direction) > 0.05f && position.z > 0.1){
-        return color;
+    if(glm::dot(normal,upward_direction) > 0.005f && position.z > 0.01){
+        return green;
+    } else {
+        return brown;
+
     }
-
-
-
-
 
     // Return white as placeholder
     return glm::vec3(0.5f,0.5f,0.5f);
@@ -232,4 +266,26 @@ float TerrainGenerator::computePerlin(float x, float y) {
     //    return interpolate(interpolate(A, B, 0.5), interpolate(D, C, 0.5), 0.5);
 
     // Return 0 as a placeholder
+}
+
+void TerrainGenerator::generateTrees(glm::vec3 pos){
+    std::mt19937 engine{ std::random_device{}() };
+    std::uniform_int_distribution<int> dist(1, 1000);
+    int randInt = dist(engine);
+
+    if(randInt == 1){
+        Tree tree = Tree(glm::vec3(pos.y, pos.z, pos.x), glm::vec3(0,1,0), glm::vec3(0.3f,0.3f,0.3f));
+        TreeInfo treeInfo;
+        treeInfo.treeVAO = tree.m_treeVao;
+        treeInfo.treeVBO = tree.m_treeVbo;
+        treeInfo.modelMat = tree.m_modelMatrix;
+        treeInfo.treeData = tree.generateShape();
+        m_trees.push_back(treeInfo);
+    }
+
+
+}
+
+std::vector<TerrainGenerator::TreeInfo> TerrainGenerator::getTrees(){
+    return m_trees;
 }
