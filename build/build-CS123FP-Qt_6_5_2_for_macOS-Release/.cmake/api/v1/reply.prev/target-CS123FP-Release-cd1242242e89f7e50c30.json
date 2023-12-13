@@ -54,7 +54,7 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 72,
+				"line" : 74,
 				"parent" : 0
 			},
 			{
@@ -294,13 +294,13 @@
 			{
 				"command" : 5,
 				"file" : 0,
-				"line" : 69,
+				"line" : 71,
 				"parent" : 0
 			},
 			{
 				"command" : 9,
 				"file" : 0,
-				"line" : 82,
+				"line" : 84,
 				"parent" : 0
 			},
 			{
@@ -492,7 +492,7 @@
 				22,
 				29,
 				31,
-				33
+				34
 			]
 		}
 	],
@@ -630,7 +630,7 @@
 				22,
 				29,
 				31,
-				33
+				34
 			]
 		},
 		{
@@ -654,22 +654,23 @@
 				27,
 				28,
 				30,
-				32
+				32,
+				33
 			]
 		},
 		{
 			"name" : "",
 			"sourceIndexes" : 
 			[
-				34
+				35
 			]
 		},
 		{
 			"name" : "CMake Rules",
 			"sourceIndexes" : 
 			[
-				35,
-				36
+				36,
+				37
 			]
 		}
 	],
@@ -854,6 +855,11 @@
 		{
 			"backtrace" : 1,
 			"path" : "src/stb_image.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/shapes/glfw3.h",
 			"sourceGroupIndex" : 1
 		},
 		{

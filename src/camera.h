@@ -19,6 +19,7 @@ public:
     glm::mat4 getViewMatrix() const;
     glm::mat4 getProjectionMatrix() const;
     glm::mat4 getInverseViewMatrix() const;
+    void setViewMatrix(glm::mat4 newViewMatrix);
 
     // Returns the aspect ratio of the camera.
     float getAspectRatio() const;

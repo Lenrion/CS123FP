@@ -34,6 +34,10 @@ glm::mat4 Camera::getViewMatrix() const {
     return viewMatrix;
 }
 
+void Camera::setViewMatrix(glm::mat4 newViewMatrix){
+    viewMatrix = newViewMatrix;
+}
+
 glm::mat4 Camera::getInverseViewMatrix() const {
     return inverseViewMatrix;
 }

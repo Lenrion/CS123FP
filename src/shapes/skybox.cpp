@@ -56,14 +56,14 @@ void Skybox::makeFace(glm::vec3 topLeft,
 }
 
 void Skybox::setVertexData() {
-    glm::vec3 v1 = glm::vec3(-10.f,  10.f, 10.f); //top left front
-    glm::vec3 v2 = glm::vec3( 10.f,  10.f, 10.f); //top right front
-    glm::vec3 v3 = glm::vec3(-10.f, -10.f, 10.f); //bottom left front
-    glm::vec3 v4 = glm::vec3( 10.f, -10.f, 10.f); //bottom right front
-    glm::vec3 v5 = glm::vec3(-10.f,  10.f, -10.f); //bottom right back
-    glm::vec3 v6 = glm::vec3( 10.f,  10.f, -10.f); //bottom left back
-    glm::vec3 v7 = glm::vec3(-10.f, -10.f, -10.f); //top right back
-    glm::vec3 v8 = glm::vec3( 10.f, -10.f, -10.f); //top left back (facing)
+    glm::vec3 v1 = glm::vec3(-40.f,  40.f, 40.f); //top left front
+    glm::vec3 v2 = glm::vec3( 40.f,  40.f, 40.f); //top right front
+    glm::vec3 v3 = glm::vec3(-40.f, -40.f, 40.f); //bottom left front
+    glm::vec3 v4 = glm::vec3( 40.f, -40.f, 40.f); //bottom right front
+    glm::vec3 v5 = glm::vec3(-40.f,  40.f, -40.f); //bottom right back
+    glm::vec3 v6 = glm::vec3( 40.f,  40.f, -40.f); //bottom left back
+    glm::vec3 v7 = glm::vec3(-40.f, -40.f, -40.f); //top right back
+    glm::vec3 v8 = glm::vec3( 40.f, -40.f, -40.f); //top left back (facing)
 
     // Front face
     makeFace(v1, v2, v3, v4);
