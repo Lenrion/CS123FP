@@ -691,16 +691,58 @@ void Realtime::mouseReleaseEvent(QMouseEvent *event) {
 
 void Realtime::mouseMoveEvent(QMouseEvent *event) {
     if (m_mouseDown) {
+//        int posX = event->position().x();
+//        int posY = event->position().y();
+//        int deltaX = posX - m_prev_mouse_pos.x;
+//        int deltaY = posY - m_prev_mouse_pos.y;
+//        m_prev_mouse_pos = glm::vec2(posX, posY);
+
+
+//        m_camera.rotateCamera(deltaX, deltaY);
         int posX = event->position().x();
         int posY = event->position().y();
         int deltaX = posX - m_prev_mouse_pos.x;
         int deltaY = posY - m_prev_mouse_pos.y;
         m_prev_mouse_pos = glm::vec2(posX, posY);
 
+        glm::vec3 look = m_camera.look;
+        glm::vec3 up = m_camera.up;
+        glm::vec3 pos = m_camera.pos;
 
-        m_camera.rotateCamera(deltaX, deltaY);
+        // Use deltaX and deltaY here to rotate
+        glm::vec3 axis = glm::cross(look, up);
+
+        look = glm::normalize(look);
+        up = glm::normalize(up);
+        axis = glm::normalize(axis);
+
+        float pixelsToDegrees = 1.0f; // rotation speed
+
+        float thetaX = glm::radians(deltaX * pixelsToDegrees); //horizontal
+        float thetaY = glm::radians(deltaY * pixelsToDegrees); //vertical
+
+        glm::mat3 rotX = constructRotationMatrix(up, thetaX);
+        glm::mat3 rotY = constructRotationMatrix(axis, thetaY);
+
+        // apply
+        m_camera.look = glm::normalize((rotY * rotX) * m_camera.look);
+        Camera camera = Camera(renderData.cameraData,size().width(),size().height());
+        m_view = camera.getViewMatrix();
+        m_proj = camera.getProjectionMatrix();
+
         update();
     }
+}
+
+glm::mat4 Realtime::constructRotationMatrix(const glm::vec3& axis, float theta) {
+    float x = axis.x;
+    float y = axis.y;
+    float z = axis.z;
+    glm::mat4 rot = glm::mat4(cos(theta) + x*x*(1.f-cos(theta)), x*y*(1.f-cos(theta)) - z*sin(theta), x*z*(1.f-cos(theta))+y*sin(theta), 0,
+                              x*y*(1.f-cos(theta))+z*sin(theta), cos(theta)+y*y*(1-cos(theta)), y*z*(1.f-cos(theta) - x*sin(theta)), 0,
+                              x*z*(1.f-cos(theta))-y*(sin(theta)), y*z*(1.f-cos(theta))+x*(sin(theta)), cos(theta)+z*z*(1.f-cos(theta)), 0,
+                              0,0,0,1.f);
+    return rot;
 }
 
 

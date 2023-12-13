@@ -51,6 +51,7 @@ private:
     void drawScene();
     void drawSkybox(glm::mat4 view);
     GLuint loadCubemap(std::vector<std::string> faces);
+    glm::mat4 constructRotationMatrix(const glm::vec3& axis, float theta);
     float time;
     float time_direction;
 

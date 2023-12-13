@@ -65,3 +65,12 @@
 4	19	1702487661577367047	/Users/Lexi_Henrion/Graphics/CS123FP/build/build-CS123FP-Qt_6_5_2_for_macOS-Release/.rcc/qrc_Resources.cpp	a536a80f0bc4b712
 19	56	1702487661613508279	CMakeFiles/CS123FP.dir/build/build-CS123FP-Qt_6_5_2_for_macOS-Release/.rcc/qrc_Resources.cpp.o	cfa36fc8cef816dd
 56	195	1702487661751019888	CS123FP	1481063a14dd8629
+8	358	1702494476230821000	CS123FP_autogen/timestamp	f941b92af30825e8
+8	358	1702494476230821000	CS123FP_autogen/mocs_compilation.cpp	f941b92af30825e8
+8	358	1702494476230821000	/Users/Lexi_Henrion/Graphics/CS123FP/build/build-CS123FP-Qt_6_5_2_for_macOS-Release/CS123FP_autogen/timestamp	f941b92af30825e8
+8	358	1702494476230821000	/Users/Lexi_Henrion/Graphics/CS123FP/build/build-CS123FP-Qt_6_5_2_for_macOS-Release/CS123FP_autogen/mocs_compilation.cpp	f941b92af30825e8
+358	1425	1702494477298887169	CMakeFiles/CS123FP.dir/src/main.cpp.o	4b19c77bb6ffbfd2
+358	1485	1702494477342962671	CMakeFiles/CS123FP.dir/CS123FP_autogen/mocs_compilation.cpp.o	1ef0fb646ed5e3d5
+358	1662	1702494477536033344	CMakeFiles/CS123FP.dir/src/mainwindow.cpp.o	f0661377406259af
+358	3869	1702494479742792638	CMakeFiles/CS123FP.dir/src/realtime.cpp.o	d4d8d260c6f17764
+3869	4018	1702494479895814452	CS123FP	1481063a14dd8629
