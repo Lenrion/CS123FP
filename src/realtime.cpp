@@ -115,6 +115,13 @@ void Realtime::initializeGL() {
 
     // Students: anything requiring OpenGL calls when the program starts should be done here
 
+    SceneCameraData camData;
+    camData.heightAngle = 30.f;
+    camData.pos = glm::vec4(3.f,3.f,3.f,1.f);
+    camData.up = glm::vec4(0.f,-1.f,0.f,0.f);
+    camData.look = glm::vec4(3.f, 3.f, 3.f,0.f);
+
+    m_camera = Camera(camData,size().width(), size().height());
 
     GLsizei size = 1;
     cone = Cone();
@@ -129,7 +136,7 @@ void Realtime::initializeGL() {
     createCylinder();
     createCube();
     createSkybox();
-    createTerrain(0,0);
+    createTerrain(m_camera.getCameraPos().z,m_camera.getCameraPos().x);
 
 
     std::vector<GLfloat> fullscreen_quad_data =
@@ -173,6 +180,12 @@ void Realtime::initializeGL() {
 
     m_skybox_texture = loadCubemap(faces);
 
+    m_model = glm::mat4(1.f);
+    m_view = m_camera.getViewMatrix();
+    m_proj = m_camera.getProjectionMatrix();
+    m_isInitialized = true;
+    update();
+
 }
 
 GLuint Realtime::loadCubemap(std::vector<std::string> faces) {
@@ -208,7 +221,7 @@ GLuint Realtime::loadCubemap(std::vector<std::string> faces) {
 
 
 void Realtime::paintGL() {
-
+    if(m_isInitialized){
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glViewport(0, 0, m_fbo_width, m_fbo_height);
 
@@ -216,7 +229,7 @@ void Realtime::paintGL() {
     m_proj = m_camera.getProjectionMatrix();
 
 
-    glUseProgram(shader);
+//    glUseProgram(shader);
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -253,7 +266,7 @@ void Realtime::paintGL() {
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_skybox_texture);
 
     glDepthMask(GL_FALSE);
-    glUseProgram(0);
+//    glUseProgram(0);
     glUseProgram(m_skybox_shader);
 
     GLint skyboxUniform = glGetUniformLocation(m_skybox_shader, "skybox");
@@ -280,13 +293,14 @@ void Realtime::paintGL() {
     glUniform4fv(cameraPosLocation, 1, &glm::inverse(m_view)[3][0]);
 
     glBindVertexArray(0);
+    glUseProgram(0);
     glDepthMask(GL_TRUE);
 
 
-    for(RenderShapeData shape: renderData.shapes){
+//    for(RenderShapeData shape: renderData.shapes){
 
-        m_model = shape.ctm;
-        glm::mat4 mvMatrix = m_view * m_model;
+//        m_model = shape.ctm;
+//        glm::mat4 mvMatrix = m_view * m_model;
         glUseProgram(m_terrainShader);
         glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "mvMatrix"), 1, GL_FALSE, &m_view[0][0]);
         glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "projMatrix"), 1, GL_FALSE, &m_proj[0][0]);
@@ -327,11 +341,14 @@ void Realtime::paintGL() {
 //                glDrawArrays(GL_TRIANGLES, 0, coneData.size() / 3);
 //                break;
 //            }
+        glUseProgram(0);
         glm::vec3 cameraPos = m_camera.getCameraPos();
-        for(int i = 0; i < 25 ; i++){
+        for(int i = 0; i < chunks * chunks ; i++){
             glUseProgram(m_terrainShader);
-            int row = (i % 5) - 2 + cameraPos.z;
-            int col = (i / 5) - 2 + cameraPos.x;
+            int x = cameraPos.z;
+            int y = cameraPos.x;
+            int row = (i % chunks) - (chunks/2) + x;
+            int col = (i / chunks) - (chunks/2) + y;
             glBindVertexArray(terrainRowMap[row][col].terrainVAO);
             int res = terrain.getResolution();
             glPolygonMode(GL_FRONT_AND_BACK,false);
@@ -341,15 +358,14 @@ void Realtime::paintGL() {
             paintTrees(terrainRowMap[row][col].trees);
             if(!terrainRowMap[row][col].pond.waterData.empty()){
                 paintWater(terrainRowMap[row][col].pond);
-                std::cout << "pond"<< std::endl;
             }
         }
-        glUseProgram(0);
 
 
 
 
-    }
+
+//    }
     glUseProgram(0);
 
     glUseProgram(m_filterShader);
@@ -375,6 +391,7 @@ void Realtime::paintGL() {
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindVertexArray(0);
     glUseProgram(0);
+    }
 }
 
 
@@ -406,11 +423,11 @@ void Realtime::paintWater(TerrainGenerator::WaterInfo water){
     glBindVertexArray(0);
     glDisable(GL_BLEND);
     glUseProgram(0);
+
 }
 
 void Realtime::paintTrees(std::vector<TerrainGenerator::TreeInfo> trees){
     glUseProgram(shader);
-    std::cout<< trees.size() << std::endl;
     for(TerrainGenerator::TreeInfo tree: trees){
                 GLint cameraWorldPosLocation  = glGetUniformLocation(shader, "cameraWorldPos");
                 glUniform4fv(cameraWorldPosLocation,1.f,&(glm::inverse(m_view)*glm::vec4(0.f,0.f,0.f,1.f))[0]);
@@ -419,7 +436,7 @@ void Realtime::paintTrees(std::vector<TerrainGenerator::TreeInfo> trees){
                 glUniformMatrix4fv(glGetUniformLocation(shader, "modelMatrix"), 1, GL_FALSE, &tree.modelMat[0][0]);
                 glUniformMatrix4fv(glGetUniformLocation(shader, "projectionMatrix"), 1, GL_FALSE, &m_proj[0][0]);
                 glBindVertexArray(tree.treeVAO);
-                glDrawArrays(GL_TRIANGLES, 0, tree.treeData.size() / 6);
+                glDrawArrays(GL_TRIANGLES, 0, tree.treeData.size() / 9);
                 glBindVertexArray(0);
 
     }
@@ -468,74 +485,10 @@ void Realtime::makeFBO(){
 
 void Realtime::sceneChanged() {
     if(shader > 0){
-
-       SceneParser::parse(settings.sceneFilePath, renderData);
-//        std::vector<SceneLightData> lights = renderData.lights;
-//        int numLights = 0;
-//       glUseProgram(shader);
-//       for(int i = 0; i < lights.size(); i++){
-//            //pos
-//                int type;
-//                switch(lights[i].type) {
-//                case LightType::LIGHT_DIRECTIONAL:
-//                    type = 0;
-//                    break;
-//                case LightType::LIGHT_POINT:
-//                    type = 1;
-//                    break;
-//                case LightType::LIGHT_SPOT:
-//                    type = 2;
-//                    std::string lightAngleName = "lights[" + std::to_string(i) + "].angle";
-//                    GLint lightAngleLoc = glGetUniformLocation(shader, lightAngleName.c_str());
-//                    glUniform1f(lightAngleLoc,lights[i].angle);
-//                    std::string lightPenumbraName = "lights[" + std::to_string(i) + "].penumbra";
-//                    GLint lightPenumbraLoc = glGetUniformLocation(shader, lightPenumbraName.c_str());
-//                    glUniform1f(lightPenumbraLoc,lights[i].penumbra);
-//                    break;
-//                }
-
-//                std::string lightAName = "lights[" + std::to_string(i) + "].a";
-//                GLint lightALoc = glGetUniformLocation(shader, lightAName.c_str());
-//                glUniform1f(lightALoc,lights[i].function[0]);
-
-//                std::string lightBName = "lights[" + std::to_string(i) + "].b";
-//                GLint lightBLoc = glGetUniformLocation(shader, lightBName.c_str());
-//                glUniform1f(lightBLoc,lights[i].function[1]);
-
-//                std::string lightCName = "lights[" + std::to_string(i) + "].c";
-//                GLint lightCLoc = glGetUniformLocation(shader, lightCName.c_str());
-//                glUniform1f(lightCLoc,lights[i].function[2]);
-
-
-//                std::string lightTypeName = "lights[" + std::to_string(i) + "].type";
-//                GLint lightTypeLoc = glGetUniformLocation(shader, lightTypeName.c_str());
-//                glUniform1i(lightTypeLoc,type);
-
-//                std::string lightPosName = "lights[" + std::to_string(i) + "].pos";
-//                GLint lightPosLoc = glGetUniformLocation(shader, lightPosName.c_str());
-//                glUniform4fv(lightPosLoc,1.f, &renderData.lights[i].pos[0]);
-//                //dir
-//                std::string lightDirName = "lights[" + std::to_string(i) + "].dir";
-//                GLint lightDirLoc = glGetUniformLocation(shader, lightDirName.c_str());
-//                glUniform4fv(lightDirLoc,1.f, &renderData.lights[i].dir[0]);
-//                //color
-//                std::string lightColorName = "lights[" + std::to_string(i) + "].color";
-//                GLint lightColorLoc = glGetUniformLocation(shader, lightColorName.c_str());
-//                glUniform4fv(lightColorLoc, 1.f, &renderData.lights[i].color[0]);
-//                numLights++;
-
-
-//       }
-//       glUniform1i(glGetUniformLocation(shader, "numLights"), numLights);
-//       glUseProgram(0);
-
        m_camera = Camera(renderData.cameraData, size().width(), size().height());
        m_model = glm::mat4(1.f);
        m_view = m_camera.getViewMatrix();
        m_proj = m_camera.getProjectionMatrix();
-       m_ka = renderData.globalData.ka;
-       m_ks = renderData.globalData.ks;
-       m_kd = renderData.globalData.kd;
 
        update(); // asks for a PaintGL() call to occur
     }
@@ -543,17 +496,11 @@ void Realtime::sceneChanged() {
 
 void Realtime::settingsChanged() {
     if(shader > 0){
-       SceneParser::parse(settings.sceneFilePath, renderData);
        m_camera.update(renderData.cameraData, size().width(), size().height());
        m_view = m_camera.getViewMatrix();
        m_proj = m_camera.getProjectionMatrix();
-       createSphere();
-       createCone();
-       createCylinder();
-       createCube();
-
-
-       update(); // asks for a PaintGL() call to occur
+       chunks = settings.shapeParameter1;
+       update();
     }
 }
 
@@ -589,7 +536,7 @@ void Realtime::mouseMoveEvent(QMouseEvent *event) {
         m_prev_mouse_pos = glm::vec2(posX, posY);
 
 
-        m_camera.rotateCamera(deltaX, deltaY);
+        m_camera.rotateCamera(-deltaX, -deltaY);
         update();
     }
 }
@@ -613,10 +560,10 @@ void Realtime::timerEvent(QTimerEvent *event) {
     if (m_keyMap[Qt::Key_S]) {
         movement -= speed * m_camera.look;
     }
-    if (m_keyMap[Qt::Key_A])  {
+    if (m_keyMap[Qt::Key_D])  {
         movement -= speed * glm::cross(m_camera.look, m_camera.up);
     }
-    if (m_keyMap[Qt::Key_D]) {
+    if (m_keyMap[Qt::Key_A]) {
         movement += speed * glm::cross(m_camera.look, m_camera.up);
     }
     if (m_keyMap[Qt::Key_Control])  {
@@ -800,9 +747,9 @@ void Realtime::createCube(){
 
 
 void Realtime::createTerrain(float xOffset, float yOffset){
-    for(int i = 0; i < 25; i++){
-        int row = (i / 5) - 2 + xOffset;
-        int col = (i % 5) - 2 + yOffset;
+    for(int i = 0; i < chunks * chunks; i++){
+        int row = (i / chunks) - (chunks/2) + xOffset;
+        int col = (i % chunks) - (chunks/2) + yOffset;
         if(terrainRowMap[row][col].terrainData.empty()){
             TerrainPatch info;
             GLuint terrainVBO;

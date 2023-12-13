@@ -1,5 +1,5 @@
 #include "glm/gtx/transform.hpp"
-#include <src/shapes/LSystem.h>
+#include <src/shapes/lsystem.h>
 
 void LSystem::rotateFacing(float theta){
     //there's a chance that these could all be zero.
@@ -10,8 +10,16 @@ void LSystem::rotateFacing(float theta){
     glm::mat4 rotate = glm::rotate(theta, randomAxis);
     m_currentState.axisFacing = rotate*glm::vec4(m_currentState.axisFacing, 0.0);
 }
+void LSystem::pushCurrentState(){
+    m_generated = false;
+    m_stateStack.push(m_currentState);
+}
 
 void LSystem::popCurrentState(){
+    if(m_generated){
+        m_terminatedBranchStates.push_back(m_currentState);
+        m_generated = false;
+    }
     m_currentState = m_stateStack.top();
     m_stateStack.pop();
 }

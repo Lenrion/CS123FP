@@ -83,6 +83,8 @@ private:
     GLuint m_fullscreen_vbo;
     GLuint m_fullscreen_vao;
 
+    int chunks = 5;
+
 
     struct TerrainPatch{
         GLuint terrainVBO;
@@ -108,9 +110,9 @@ private:
     Sphere sphere;
     TerrainGenerator terrain;
     Tree m_tree;
-    float m_ka;
-    float m_ks;
-    float m_kd;
+    float m_ka = 0.5f;
+    float m_ks = 0.5f;
+    float m_kd = 0.5f;
 
     std::unordered_map<int, TerrainPatch> terrainMap;
     std::unordered_map<int, std::unordered_map<int, TerrainPatch>> terrainRowMap;
@@ -143,4 +145,9 @@ private:
     glm::mat4 m_model = glm::mat4(1);
     glm::mat4 m_view  = glm::mat4(1);
     glm::mat4 m_proj  = glm::mat4(1);
+
+    bool m_isInitialized = false;
+
+
+
 };

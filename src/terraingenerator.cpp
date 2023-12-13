@@ -226,14 +226,19 @@ glm::vec3 TerrainGenerator::getNormal(int row, int col, float xOffset, float yOf
 // Computes color of vertex using normal and, optionally, position
 glm::vec3 TerrainGenerator::getColor(glm::vec3 normal, glm::vec3 position) {
     glm::vec3 green = glm::vec3(0.199,0.196,0.339);
-    glm::vec3 brown = glm::vec3(0.18,0.49,0.306);
+    glm::vec3 darkGreen = glm::vec3(0.4,0.4,0.67);
+    glm::vec3 sand = glm::vec3(0.53f,0.72f,0.55f);
+
+
     glm::vec3 upward_direction = glm::vec3(0, 1, 0);
 
+    if(position.z > -0.3f && position.z < 0.f){
+        return sand;
+    }
     if(glm::dot(normal,upward_direction) > 0.005f && position.z > 0.01){
-        return green;
+        return darkGreen;
     } else {
-        return brown;
-
+        return green;
     }
 
     // Return white as placeholder
@@ -270,11 +275,17 @@ float TerrainGenerator::computePerlin(float x, float y) {
 
 void TerrainGenerator::generateTrees(glm::vec3 pos){
     std::mt19937 engine{ std::random_device{}() };
-    std::uniform_int_distribution<int> dist(1, 1000);
+    std::uniform_int_distribution<int> dist(1, 300);
+    std::uniform_int_distribution<int> scaleX(30, 60);
+    std::uniform_int_distribution<int> scaleY(5, 20);
+    std::uniform_int_distribution<int> scaleZ(30, 60);
     int randInt = dist(engine);
+    float randXScale = (float)scaleX(engine) /100.f;
+    float randYScale = (float)scaleY(engine) /100.f;
+    float randZScale = (float)scaleZ(engine) /100.f;
 
     if(randInt == 1){
-        Tree tree = Tree(glm::vec3(pos.y, pos.z, pos.x), glm::vec3(0,1,0), glm::vec3(0.3f,0.3f,0.3f));
+        Tree tree = Tree(glm::vec3(pos.y, pos.z, pos.x), glm::vec3(0,1,0), glm::vec3(0.1f,randYScale,0.1f));
         TreeInfo treeInfo;
         treeInfo.treeVAO = tree.m_treeVao;
         treeInfo.treeVBO = tree.m_treeVbo;

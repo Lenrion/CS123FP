@@ -1006,10 +1006,10 @@
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Cone.h \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Cube.h \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Cylinder.h \
-  /Users/anastasioortiz/graphics/CS123FP/src/shapes/LSystem.h \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/Sphere.h \
-  /Users/anastasioortiz/graphics/CS123FP/src/shapes/Tree.h \
+  /Users/anastasioortiz/graphics/CS123FP/src/shapes/lsystem.h \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/skybox.h \
+  /Users/anastasioortiz/graphics/CS123FP/src/shapes/tree.h \
   /Users/anastasioortiz/graphics/CS123FP/src/shapes/water.h \
   /Users/anastasioortiz/graphics/CS123FP/src/terraingenerator.h \
   /Users/anastasioortiz/graphics/CS123FP/src/utils/aspectratiowidget/aspectratiowidget.hpp \

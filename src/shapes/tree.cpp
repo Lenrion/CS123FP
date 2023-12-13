@@ -2,6 +2,7 @@
 #include "glm/gtx/transform.hpp"
 #include "shapes/Cylinder.h"
 #include <ctime>
+
 Tree::Tree(glm::vec3 position, glm::vec3 orientation, glm::vec3 scale){
     glm::mat4 translate = glm::translate(position);
     glm::vec3 yAxis = glm::vec3(0, 1.0f, 0);
@@ -19,6 +20,7 @@ Tree::Tree(glm::vec3 position, glm::vec3 orientation, glm::vec3 scale){
     //populate vertex data
     updateParams(3);
 }
+
 void Tree::updateParams(int param1){
     if(param1 != m_param1){
         m_vertexData = std::vector<float>();
@@ -29,16 +31,17 @@ void Tree::updateParams(int param1){
     }
 }
 
+
 void Tree::setVertexData(){
 
     srand((unsigned) time(NULL));
 
     //    generateRecursively();
-
-    //populates vertex data
     generateLSystem();
-
-    // Generate and bind the VBO
+    generateBushes();
+    //next, we want to recursive generate branches
+    //at each level of a branch, the next branch should take, say, 80% of the height.
+    //the starting y value of the next branch can be the maximum y value.
     glGenBuffers(1, &m_treeVbo);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_treeVbo);
@@ -55,22 +58,38 @@ void Tree::setVertexData(){
     //normal
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-//    //color
+    //    //color
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9*sizeof(float), (void *)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
     // Unbind the VAO and VBO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+}
+
+void Tree::generateBushes(){
+    std::vector<LSystemState> terminatedStates = m_lSystem.getTerminatedStates();
+    for(LSystemState state : terminatedStates){
+        Cylinder bush = Cylinder();
+        glm::mat4 scale = glm::scale(glm::vec3(1.0, 0.2, 1.0));
+        bush.setCtm(state.translateMatrix * scale);
+        bush.setColor(glm::vec3(0.1f, 0.8f, 0.2f));
+        bush.updateParams(5, 5);
+        std::vector<float> newData = bush.generateShape();
+        m_vertexData.insert(m_vertexData.end(), newData.begin(), newData.end());
+    }
 }
 
 void Tree::generateLSystem(){
     std::string sentence = m_lSystem.getSentence();
-    //    std::string sentence = "F[++F--F]--F++F";
+    int count = 0;
+
     for(char c : sentence){
         switch(c){
         case 'F': { //draw a cylinder using the current state and update the state.
             generateBranch(m_lSystem.getCurrentState());
+            m_lSystem.generatedBranch(true);
         }
         break;
         case '+':
@@ -88,7 +107,6 @@ void Tree::generateLSystem(){
         default: break;
         }
     }
-
 }
 
 void Tree::generateBranch(LSystemState currentState){
@@ -108,11 +126,7 @@ void Tree::generateBranch(LSystemState currentState){
     glm::mat4 scale = glm::scale(glm::vec3(0.2, length, 0.2));
     Cylinder cylinder = Cylinder();
     cylinder.setCtm(translate*rotate*scale);
-    glm::vec3 color = glm::vec3(0.6, 0.6, 0.1);
-    if(length < 0.5){
-        color = glm::vec3(0.0, 1.0, 0.0);
-    }
-    cylinder.setColor(color);
+    cylinder.setColor(glm::vec3(0.627f, 0.322f, 0.176f));
     cylinder.updateParams(5, 5);
     std::vector<float> newData = cylinder.generateShape();
     m_vertexData.insert(m_vertexData.end(), newData.begin(), newData.end());

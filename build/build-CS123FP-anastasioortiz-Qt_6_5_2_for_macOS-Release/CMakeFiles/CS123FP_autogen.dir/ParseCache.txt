@@ -1791,10 +1791,10 @@
  mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/Cone.h
  mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/Cube.h
  mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/Cylinder.h
- mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/LSystem.h
  mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/Sphere.h
- mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/Tree.h
+ mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/lsystem.h
  mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/skybox.h
+ mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/tree.h
  mdp:/Users/anastasioortiz/graphics/CS123FP/src/shapes/water.h
  mdp:/Users/anastasioortiz/graphics/CS123FP/src/terraingenerator.h
  mdp:/Users/anastasioortiz/graphics/CS123FP/src/utils/aspectratiowidget/aspectratiowidget.hpp

@@ -14,6 +14,12 @@ Camera::Camera(SceneCameraData cameraData, int width, int height) {
     m_cameraData = cameraData;
     m_height = height;
     m_width = width;
+    std::cout << "look[3]" << look[3] << std::endl;
+    std::cout << "up[3]" << up[3] << std::endl;
+    std::cout << "pos[3]" << pos[3] << std::endl;
+    std::cout << "pos.x" << pos.x << std::endl;
+    std::cout << "pos.y" << pos.y << std::endl;
+    std::cout << "pos.z" << pos.z << std::endl;
     calculateViewMatrix();
     calculateProjectionMatrix();
 }

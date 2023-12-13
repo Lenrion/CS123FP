@@ -11,7 +11,7 @@ class TerrainGenerator
 {
 public:
     bool m_wireshade;
-    float m_waterHeight = 0.1f;
+    float m_waterHeight = -0.2f;
 
 
     TerrainGenerator();
