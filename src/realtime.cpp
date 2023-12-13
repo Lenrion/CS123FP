@@ -285,6 +285,7 @@ void Realtime::paintGL() {
     glUniform1i(glGetUniformLocation(m_filterShader,"grayscale"), settings.extraCredit1);
     glUniform1i(glGetUniformLocation(m_filterShader,"sharpen"), settings.kernelBasedFilter);
     glUniform1i(glGetUniformLocation(m_filterShader,"blur"), settings.extraCredit2);
+    glUniform1i(glGetUniformLocation(m_filterShader,"pixelate"), settings.extraCredit3);
     glUniform1i(glGetUniformLocation(m_filterShader,"width"), m_screen_width);
     glUniform1i(glGetUniformLocation(m_filterShader,"height"), m_screen_height);
 
