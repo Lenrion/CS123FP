@@ -3,6 +3,7 @@
 #include <vector>
 #include "glm/glm.hpp"
 #include "shapes/Water.h"
+#include "shapes/Tree.h"
 #include <GL/glew.h>
 
 
@@ -10,14 +11,32 @@ class TerrainGenerator
 {
 public:
     bool m_wireshade;
-    std::vector<Water> m_ponds;
+    float m_waterHeight = 0.1f;
+
 
     TerrainGenerator();
     ~TerrainGenerator();
     int getResolution() { return m_resolution; };
     std::vector<float> generateTerrain(float xOffset, float yOffset);
-    void createPond(const std::vector<std::vector<bool>>& isInValley);
+    void createPond(const std::vector<std::vector<bool>>& isInValley,int xOffset, int yOffset);
     std::vector<glm::vec3> identifyPerimeter(int x, int y);
+    struct TreeInfo{
+        GLuint treeVAO;
+        GLuint treeVBO;
+        std::vector<float> treeData;
+        float u;
+        float v;
+        glm::mat4 modelMat;
+    };
+    struct WaterInfo{
+        GLuint waterVAO;
+        GLuint waterVBO;
+        std::vector<float> waterData;
+    };
+
+    WaterInfo m_ponds;
+
+    std::vector<TreeInfo> getTrees();
 
 private:
 
@@ -25,6 +44,9 @@ private:
     std::vector<glm::vec2> m_randVecLookup;
     int m_resolution;
     int m_lookupSize;
+
+    std::vector<TreeInfo> m_trees;
+
 
     // Samples the (infinite) random vector grid at (row, col)
     glm::vec2 sampleRandomVector(int row, int col);
@@ -45,7 +67,11 @@ private:
     // Computes color of vertex using normal and, optionally, position
     glm::vec3 getColor(glm::vec3 normal, glm::vec3 position);
 
+
     // Computes the intensity of Perlin noise at some point
     float computePerlin(float x, float y);
+    void generateTrees(glm::vec3 pos);
+
+
 };
 

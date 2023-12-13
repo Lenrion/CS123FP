@@ -52,6 +52,10 @@ add_executable(${PROJECT_NAME}
         src/shapes/Cylinder.h
         src/shapes/Water.h
         src/shapes/Sphere.h
+        src/shapes/LSystem.h
+        src/shapes/LSystem.cpp
+        src/shapes/tree.h
+        src/shapes/tree.cpp
         src/terraingenerator.h src/terraingenerator.cpp
         src/shapes/skybox.h src/shapes/skybox.cpp
         src/stb_image.h

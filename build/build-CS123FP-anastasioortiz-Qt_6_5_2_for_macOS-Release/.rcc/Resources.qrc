@@ -6,6 +6,10 @@
     <file alias="resources/shaders/pixel.frag">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/pixel.frag</file>
     <file alias="resources/shaders/terrain.frag">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/terrain.frag</file>
     <file alias="resources/shaders/terrain.vert">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/terrain.vert</file>
+    <file alias="resources/shaders/water.frag">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/water.frag</file>
+    <file alias="resources/shaders/water.vert">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/water.vert</file>
+    <file alias="resources/shaders/skybox.vert">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/skybox.vert</file>
+    <file alias="resources/shaders/skybox.frag">/Users/anastasioortiz/graphics/CS123FP/resources/shaders/skybox.frag</file>
   </qresource>
 </RCC>
 

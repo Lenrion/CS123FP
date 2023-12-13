@@ -8,13 +8,6 @@ Water::Water(glm::vec3 topLeft, glm::vec3 topRight, glm::vec3 bottomLeft, glm::v
 
 }
 
-//void Water::updateParams(int param1, int param2) {
-//    m_vertexData = std::vector<float>();
-//    m_param1 = glm::max(param1,2);
-//    m_param2 = glm::max(param2,2);
-//    setVertexData(topLeft, topRight, bottomLeft, bottomRight);
-//}
-
 void Water::makeTile(glm::vec3 topLeft,
                      glm::vec3 topRight,
                      glm::vec3 bottomLeft,
@@ -47,18 +40,7 @@ void Water::makeTile(glm::vec3 topLeft,
 
 void Water::setVertexData(glm::vec3 topLeft, glm::vec3 topRight, glm::vec3 bottomLeft, glm::vec3 bottomRight) {
 
-//    glm::vec3 v1 = glm::vec3(-1.7f,  0.5f, 1.7f); //top left front
-//    glm::vec3 v2 = glm::vec3( 1.7f,  0.5f, 1.7f); //top right front
-//    glm::vec3 v5 = glm::vec3(-1.7f,  0.5f, -1.7f); //bottom right back
-//    glm::vec3 v6 = glm::vec3( 1.7f,  0.5f, -1.7f); //bottom left back
-
-    //    glm::vec3 v1 = glm::vec3(-1.7f,  0.5f, 1.7f); //top left front
-    //    glm::vec3 v2 = glm::vec3( 1.7f,  0.5f, 1.7f); //top right front
-
-    //    // Top face
-//    makeTile(v5,v6,v1,v2);
     makeTile(topLeft, topRight, bottomLeft, bottomRight);
-
 
     // Generate and bind the VBO
     glGenBuffers(1, &m_waterVBO);

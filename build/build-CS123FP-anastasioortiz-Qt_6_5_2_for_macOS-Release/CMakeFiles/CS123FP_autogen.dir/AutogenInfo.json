@@ -490,9 +490,39 @@
 			null
 		],
 		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/LSystem.h",
+			"MU",
+			"2S5AI7NIVA/moc_LSystem.cpp",
+			null
+		],
+		[
 			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/Sphere.h",
 			"MU",
 			"2S5AI7NIVA/moc_Sphere.cpp",
+			null
+		],
+		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/Water.h",
+			"MU",
+			"2S5AI7NIVA/moc_Water.cpp",
+			null
+		],
+		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/skybox.h",
+			"MU",
+			"2S5AI7NIVA/moc_skybox.cpp",
+			null
+		],
+		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/tree.h",
+			"MU",
+			"2S5AI7NIVA/moc_tree.cpp",
+			null
+		],
+		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/stb_image.h",
+			"MU",
+			"UVLADIE3JM/moc_stb_image.cpp",
 			null
 		],
 		[
@@ -638,7 +668,27 @@
 			null
 		],
 		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/LSystem.cpp",
+			"MU",
+			null
+		],
+		[
 			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/Sphere.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/Water.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/skybox.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/anastasioortiz/graphics/CS123FP/src/shapes/tree.cpp",
 			"MU",
 			null
 		],

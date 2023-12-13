@@ -56,6 +56,7 @@ public:
     SceneCameraData m_cameraData;
     int m_width;
     int m_height;
+    glm::mat4 constructRotationMatrix(const glm::vec3& axis, float theta);
 
 
 

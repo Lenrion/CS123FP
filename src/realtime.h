@@ -19,6 +19,7 @@
 #include "shapes/Cone.h"
 #include "shapes/Cylinder.h"
 #include "shapes/Cube.h"
+#include "shapes/Tree.h"
 #include "camera.h"
 #include "terraingenerator.h"
 
@@ -97,13 +98,14 @@ private:
     GLuint m_fullscreen_vao;
 
 
-    struct TerrainInfo{
+    struct TerrainPatch{
         GLuint terrainVBO;
         GLuint terrainVAO;
         int row;
         int col;
         std::vector<float> terrainData;
-        //vector of ponds
+        std::vector<TerrainGenerator::TreeInfo> trees;
+        TerrainGenerator::WaterInfo pond;
     };
 
 
@@ -119,15 +121,18 @@ private:
     Skybox skybox;
     Sphere sphere;
     TerrainGenerator terrain;
+    Tree m_tree;
     float m_ka;
     float m_ks;
     float m_kd;
 
-    std::unordered_map<int, TerrainInfo> terrainMap;
-    std::unordered_map<int, std::unordered_map<int, TerrainInfo>> terrainRowMap;
+    std::unordered_map<int, TerrainPatch> terrainMap;
+    std::unordered_map<int, std::unordered_map<int, TerrainPatch>> terrainRowMap;
 
 
     void paintTexture(GLuint texture);
+    void paintTrees(std::vector<TerrainGenerator::TreeInfo> trees);
+    void paintWater(TerrainGenerator::WaterInfo water);
 
     // Tick Related Variables
     int m_timer;                                        // Stores timer which attempts to run ~60 times per second
@@ -143,6 +148,7 @@ private:
     void createCylinder();
     void createTerrain(float xOffset, float yOffset);
     void createSkybox();
+
     // Device Correction Variables
     int m_devicePixelRatio;
     RenderData renderData;
