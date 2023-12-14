@@ -5,8 +5,10 @@ uniform bool invert;
 uniform bool grayscale;
 uniform bool sharpen;
 uniform bool blur;
+uniform bool pixelate;
 uniform int width;
 uniform int height;
+
 
 out vec4 fragColor;
 
@@ -45,7 +47,20 @@ void main()
         }
     }
 
-    if(!sharpen && !blur){
+    if(pixelate){
+        int pixelSize = 15; // control the pixelation level
+        vec2 pixelSizeVec = vec2(pixelSize);
+
+        // pixel's x and y indices
+        vec2 pixelIndices = floor(uv * vec2(width, height) / pixelSizeVec);
+
+        vec2 pixelUV = (pixelIndices + vec2(0.5)) / (vec2(width, height) / pixelSizeVec);
+
+        // sample the texture
+        fragColor = texture(tex, pixelUV);
+        }
+
+    if(!sharpen && !blur && !pixelate){
         fragColor = texture(tex, uv);
     }
 

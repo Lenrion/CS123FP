@@ -377,7 +377,7 @@ build StaticGLEW_autogen/timestamp StaticGLEW_autogen/mocs_compilation.cpp | ${c
 #############################################
 # Phony custom command for CMakeFiles/CS123FP_autogen_timestamp_deps
 
-build CMakeFiles/CS123FP_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/CS123FP_autogen_timestamp_deps: phony /Users/anastasioortiz/Qt/6.5.2/macos/./libexec/moc /Users/anastasioortiz/Qt/6.5.2/macos/./libexec/uic libStaticGLEW.a || StaticGLEW_autogen StaticGLEW_autogen_timestamp_deps libStaticGLEW.a
+build CMakeFiles/CS123FP_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/CS123FP_autogen_timestamp_deps: phony libStaticGLEW.a /Users/anastasioortiz/Qt/6.5.2/macos/./libexec/uic /Users/anastasioortiz/Qt/6.5.2/macos/./libexec/moc || StaticGLEW_autogen StaticGLEW_autogen_timestamp_deps libStaticGLEW.a
 
 
 #############################################
@@ -389,7 +389,7 @@ build CMakeFiles/CS123FP_autogen | ${cmake_ninja_workdir}CMakeFiles/CS123FP_auto
 #############################################
 # Phony custom command for CMakeFiles/StaticGLEW_autogen_timestamp_deps
 
-build CMakeFiles/StaticGLEW_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/StaticGLEW_autogen_timestamp_deps: phony /Users/anastasioortiz/Qt/6.5.2/macos/./libexec/moc /Users/anastasioortiz/Qt/6.5.2/macos/./libexec/uic
+build CMakeFiles/StaticGLEW_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/StaticGLEW_autogen_timestamp_deps: phony /Users/anastasioortiz/Qt/6.5.2/macos/./libexec/uic /Users/anastasioortiz/Qt/6.5.2/macos/./libexec/moc
 
 
 #############################################

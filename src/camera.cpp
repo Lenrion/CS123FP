@@ -24,7 +24,7 @@ Camera::Camera(SceneCameraData cameraData, int width, int height) {
     calculateProjectionMatrix();
 }
 
-void Camera::update(SceneCameraData cameraData, int width, int height){
+void Camera::update(){
     calculateViewMatrix();
     calculateProjectionMatrix();
 }
@@ -38,6 +38,10 @@ glm::vec3 Camera::getCameraPos(){
 
 glm::mat4 Camera::getViewMatrix() const {
     return viewMatrix;
+}
+
+void Camera::setViewMatrix(glm::mat4 newViewMatrix){
+    viewMatrix = newViewMatrix;
 }
 
 glm::mat4 Camera::getInverseViewMatrix() const {

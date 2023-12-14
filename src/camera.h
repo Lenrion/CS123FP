@@ -19,6 +19,7 @@ public:
     glm::mat4 getViewMatrix() const;
     glm::mat4 getProjectionMatrix() const;
     glm::mat4 getInverseViewMatrix() const;
+    void setViewMatrix(glm::mat4 newViewMatrix);
 
     // Returns the aspect ratio of the camera.
     float getAspectRatio() const;
@@ -40,7 +41,7 @@ public:
     void calculateViewMatrix();
     void calculateProjectionMatrix();
     void moveLook(bool isBack);
-    void update(SceneCameraData cameraData, int width, int height);
+    void update();
     void updateCameraPos(glm::vec3 offSet);
     void rotateCamera(float deltaX, float deltaY);
 

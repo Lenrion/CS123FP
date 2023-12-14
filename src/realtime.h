@@ -47,8 +47,21 @@ private:
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void timerEvent(QTimerEvent *event) override;
-    void makeFBO();
+    void makeFBOs();
+    void drawScene();
+    void drawSkybox(glm::mat4 view);
     GLuint loadCubemap(std::vector<std::string> faces);
+    glm::mat4 constructRotationMatrix(const glm::vec3& axis, float theta);
+    float time;
+    float time_direction;
+
+    GLuint m_reflectionFBO;
+    GLuint m_reflectionTexture;
+    GLuint m_reflectionRenderbuffer;
+    GLuint m_refractionFBO;
+    GLuint m_refractionTexture;
+    GLuint m_refractionDepthTexture;
+
 
     GLuint sphereVBO;
     GLuint sphereVAO;
@@ -67,11 +80,13 @@ private:
     GLuint m_fbo_texture;
     GLuint m_fbo_renderbuffer;
     GLuint m_skybox_texture;
+    GLuint m_water_texture;
 
     int m_fbo_width;
     int m_fbo_height;
     int m_screen_width;
     int m_screen_height;
+
 
 
     std::vector<float> sphereData;

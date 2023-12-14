@@ -243,6 +243,7 @@
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/ctype.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/cwchar \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/cwctype \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/deque \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/errno.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/exception \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/float.h \
@@ -268,6 +269,7 @@
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/optional \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/ostream \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/ratio \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/stack \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/stdbool.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/stddef.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk/usr/include/c++/v1/stdexcept \
@@ -512,7 +514,9 @@
   /Users/Lexi_Henrion/Graphics/CS123FP/src/shapes/Cone.h \
   /Users/Lexi_Henrion/Graphics/CS123FP/src/shapes/Cube.h \
   /Users/Lexi_Henrion/Graphics/CS123FP/src/shapes/Cylinder.h \
+  /Users/Lexi_Henrion/Graphics/CS123FP/src/shapes/LSystem.h \
   /Users/Lexi_Henrion/Graphics/CS123FP/src/shapes/Sphere.h \
+  /Users/Lexi_Henrion/Graphics/CS123FP/src/shapes/Tree.h \
   /Users/Lexi_Henrion/Graphics/CS123FP/src/shapes/Water.h \
   /Users/Lexi_Henrion/Graphics/CS123FP/src/shapes/skybox.h \
   /Users/Lexi_Henrion/Graphics/CS123FP/src/terraingenerator.h \

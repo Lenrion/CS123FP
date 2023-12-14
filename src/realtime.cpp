@@ -4,6 +4,7 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <iostream>
+#include "glm/gtx/transform.hpp"
 #include "settings.h"
 #include "shapes/Cone.h"
 #include "shapes/Sphere.h"
@@ -17,6 +18,13 @@
 #include <unordered_map>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#define CHECK_GL_ERROR() {\
+GLenum err = glGetError();\
+    if (err != GL_NO_ERROR) {\
+        std::cout << "OpenGL error: " << err << " at line " << __LINE__ << std::endl;\
+}\
+}
+
 
 // ================== Project 5: Lights, Camera
 
@@ -55,6 +63,15 @@ void Realtime::finish() {
     glDeleteVertexArrays(size, &cylinderVAO);
     glDeleteBuffers(size, &cubeVBO);
     glDeleteVertexArrays(size, &cubeVAO);
+
+////    for(int i = 0; i < terrainRowMap.size(); i++){
+////        glDeleteBuffers(size, &terrainMap[i].terrainVBO);
+////        glDeleteVertexArrays(size, &terrainMap[i].terrainVAO);
+////    }
+//    glDeleteVertexArrays(size,&terrainRowMap[0][0].terrainVAO);
+//    glDeleteBuffers(size,&terrainRowMap[0][0].terrainVBO);
+////    m_water_fbos.deleteAll();
+
     for(int i = 0; i < terrainRowMap.size(); i++){
         for(int j = 0; j < terrainMap.size(); j++){
         glDeleteBuffers(size, &terrainRowMap[i][j].terrainVBO);
@@ -67,6 +84,8 @@ void Realtime::finish() {
     glDeleteVertexArrays(1, &m_fullscreen_vao);
     glDeleteBuffers(1, &m_fullscreen_vbo);
     glDeleteTextures(1, &m_fbo_texture);
+    glDeleteTextures(1, &m_water_texture);
+    glDeleteTextures(1, &m_reflectionTexture);
     glDeleteRenderbuffers(1, &m_fbo_renderbuffer);
     glDeleteFramebuffers(1, &m_fbo);
 
@@ -80,12 +99,15 @@ void Realtime::finish() {
 
 void Realtime::initializeGL() {
     m_devicePixelRatio = this->devicePixelRatio();
+    time = 0.f;
+    time_direction = 1.f;
 
     m_defaultFBO = 2;
     m_screen_width = size().width() * m_devicePixelRatio;
     m_screen_height = size().height() * m_devicePixelRatio;
     m_fbo_width = m_screen_width;
     m_fbo_height = m_screen_height;
+    settings.farPlane = 100;
 
 
     m_timer = startTimer(1000/60);
@@ -166,25 +188,31 @@ void Realtime::initializeGL() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    makeFBO();
+//    m_water_fbos = WaterFrameBuffers(m_screen_width, m_screen_height);
+//    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+
 
     std::vector<std::string> faces
         {
-            "../resources/images/xpos.png",
-            "../resources/images/xneg.png",
-            "../resources/images/ypos.png", //
-            "../resources/images/yneg.png", //
-            "../resources/images/zpos.png",
-            "../resources/images/zneg.png"
+            "/Users/anastasioortiz/CS123FP/resources/images/xpos.png",
+            "/Users/anastasioortiz/CS123FP/resources/images/xneg.png",
+            "/Users/anastasioortiz/CS123FP/resources/images/ypos.png", //
+            "/Users/anastasioortiz/CS123FP/resources/images/yneg.png", //
+            "/Users/anastasioortiz/CS123FP/resources/images/zpos.png",
+            "/Users/anastasioortiz/CS123FP/resources/images/zneg.png"
         };
 
     m_skybox_texture = loadCubemap(faces);
 
+\
     m_model = glm::mat4(1.f);
     m_view = m_camera.getViewMatrix();
     m_proj = m_camera.getProjectionMatrix();
     m_isInitialized = true;
-    update();
+
+
+    CHECK_GL_ERROR();
+    makeFBOs();
 
 }
 
@@ -219,54 +247,95 @@ GLuint Realtime::loadCubemap(std::vector<std::string> faces) {
     return textureID;
 }
 
-
 void Realtime::paintGL() {
     if(m_isInitialized){
+    m_view = m_camera.getViewMatrix();
+    /**The following chunk of code handles the water reflection FBOs :)*/
+    glm::mat4 origViewMatrix = m_camera.getViewMatrix();
+    //    glm::mat4 reflectionMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, -1.0f, 1.0f));
+    glm::mat4 reflectedViewMatrix = glm::scale(origViewMatrix, glm::vec3(1.0f, -1.0f, 1.0f));//reflectionMatrix * origViewMatrix;
+    m_camera.setViewMatrix(reflectedViewMatrix);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fbo_texture, 0); //alr bound
+
+    // Set the clear color and depth, and clear the framebuffer
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepth(1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+//    glCullFace(GL_FRONT);
+    drawSkybox(reflectedViewMatrix);
+//    drawScene(); //only if you want to render land reflections
+//    glCullFace(GL_BACK);
+
+    //copy the data from m_fbo_texture to m_water_texture
+    glBindTexture(GL_TEXTURE_2D, m_water_texture);
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, m_fbo_width, m_fbo_height);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    m_camera.setViewMatrix(origViewMatrix);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+    //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fbo_texture, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepth(1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    drawSkybox(origViewMatrix);
+    drawScene();
+
+
+    //test water square used to be here
+
+
+    //POSTPROCESSING
+    glUseProgram(m_filterShader);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+    glViewport(0, 0, m_screen_width, m_screen_height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUniform1i(glGetUniformLocation(m_filterShader,"invert"), settings.perPixelFilter);
+    glUniform1i(glGetUniformLocation(m_filterShader,"grayscale"), settings.extraCredit1);
+    glUniform1i(glGetUniformLocation(m_filterShader,"sharpen"), settings.kernelBasedFilter);
+    glUniform1i(glGetUniformLocation(m_filterShader,"blur"), settings.extraCredit2);
+    glUniform1i(glGetUniformLocation(m_filterShader,"pixelate"), settings.extraCredit3);
+    glUniform1i(glGetUniformLocation(m_filterShader,"width"), m_screen_width);
+    glUniform1i(glGetUniformLocation(m_filterShader,"height"), m_screen_height);
+
+    glBindVertexArray(m_fullscreen_vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_fbo_texture);
+    glUniform1i(glGetUniformLocation(m_filterShader,"tex"), 0);
+
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    }
+}
+
+void Realtime::drawSkybox(glm::mat4 view){
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glViewport(0, 0, m_fbo_width, m_fbo_height);
 
-    m_view = m_camera.getViewMatrix();
+    //m_view = m_camera.getViewMatrix();
     m_proj = m_camera.getProjectionMatrix();
-
-
-//    glUseProgram(shader);
-
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Clear screen color and depth before painting
-//    GLint cameraWorldPosLocation  = glGetUniformLocation(shader, "cameraWorldPos");
-//    glUniform4fv(cameraWorldPosLocation,1.f,&(glm::inverse(m_view)*glm::vec4(0.f,0.f,0.f,1.f))[0]);
-
-//    glUniformMatrix4fv(glGetUniformLocation(shader, "viewMatrix"), 1, GL_FALSE, &m_view[0][0]);
-//    glUniformMatrix4fv(glGetUniformLocation(shader, "inverseTransposeMatrix"), 1, GL_FALSE, &glm::inverse(glm::transpose(m_tree.m_modelMatrix))[0][0]);    glUniformMatrix4fv(glGetUniformLocation(shader, "viewMatrix"), 1, GL_FALSE, &m_view[0][0]);
-//    glUniformMatrix4fv(glGetUniformLocation(shader, "modelMatrix"), 1, GL_FALSE, &m_tree.m_modelMatrix[0][0]);
-//    glUniformMatrix4fv(glGetUniformLocation(shader, "projectionMatrix"), 1, GL_FALSE, &m_proj[0][0]);
-
-//    glUniformMatrix4fv(glGetUniformLocation(m_terrainShader, "projMatrix"), 1, GL_FALSE, &m_proj[0][0]);
-//    glBindVertexArray(m_tree.m_treeVao);
-//    glDrawArrays(GL_TRIANGLES, 0, m_tree.generateShape().size() / 6);
-//    glBindVertexArray(0);
-//    glUseProgram(0);
-
-
-//    GLint ksLocation = glGetUniformLocation(shader, "k_s");
-//    glUniform1f(ksLocation, m_ks);
-
-//    // Task 12: pass m_ka into the fragment shader as a uniform
-//    GLint kaLocation = glGetUniformLocation(shader, "k_a");
-//    glUniform1f(kaLocation, m_ka);
-
-//    GLint kdLocation = glGetUniformLocation(shader, "k_d");
-//    glUniform1f(kdLocation, m_kd);
-
-    //The following chunk of code handles the skybox shader :)
+    /**The following chunk of code handles the skybox shader :)*/
+    glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_CLAMP);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_skybox_texture);
 
     glDepthMask(GL_FALSE);
-//    glUseProgram(0);
+
+    glDisable(GL_DEPTH_TEST);
+    glUseProgram(0);
     glUseProgram(m_skybox_shader);
 
     GLint skyboxUniform = glGetUniformLocation(m_skybox_shader, "skybox");
@@ -274,7 +343,7 @@ void Realtime::paintGL() {
     //^texture binding and putting into skybox var in shader
 
     glBindVertexArray(skyboxVAO);
-    glDrawArrays(GL_TRIANGLES, 0, skyboxData.size() / 6);
+
     // Task 6: pass in m_model as a uniform into the shader program
     GLint modelMatrixLocation = glGetUniformLocation(m_skybox_shader, "modelMatrix");
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &m_model[0][0]);//get first index's address
@@ -284,17 +353,24 @@ void Realtime::paintGL() {
 
     // Task 7: pass in m_view and m_proj
     GLint viewMatrixLocation = glGetUniformLocation(m_skybox_shader, "viewMatrix");
-    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &m_view[0][0]);//get first index's address
+    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &view[0][0]);//get first index's address
 
     GLint projectionMatrixLocation = glGetUniformLocation(m_skybox_shader, "projectionMatrix");
     glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &m_proj[0][0]);//get first index's address
 
     GLint cameraPosLocation = glGetUniformLocation(m_skybox_shader, "worldSpaceCamera");
     glUniform4fv(cameraPosLocation, 1, &glm::inverse(m_view)[3][0]);
+    glDrawArrays(GL_TRIANGLES, 0, skyboxData.size() / 6);
 
     glBindVertexArray(0);
     glUseProgram(0);
     glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+}
+
+
+void Realtime::drawScene() {
 
 
 //    for(RenderShapeData shape: renderData.shapes){
@@ -360,64 +436,88 @@ void Realtime::paintGL() {
                 paintWater(terrainRowMap[row][col].pond);
             }
         }
-
-
-
-
-
-//    }
     glUseProgram(0);
 
-    glUseProgram(m_filterShader);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
-    glViewport(0, 0, m_screen_width, m_screen_height);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUniform1i(glGetUniformLocation(m_filterShader,"invert"), settings.perPixelFilter);
-    glUniform1i(glGetUniformLocation(m_filterShader,"grayscale"), settings.extraCredit1);
-    glUniform1i(glGetUniformLocation(m_filterShader,"sharpen"), settings.kernelBasedFilter);
-    glUniform1i(glGetUniformLocation(m_filterShader,"blur"), settings.extraCredit2);
-    glUniform1i(glGetUniformLocation(m_filterShader,"width"), m_screen_width);
-    glUniform1i(glGetUniformLocation(m_filterShader,"height"), m_screen_height);
-
-    glBindVertexArray(m_fullscreen_vao);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D,m_fbo_texture);
-    glUniform1i(glGetUniformLocation(m_filterShader,"tex"), 0);
-
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindVertexArray(0);
-    glUseProgram(0);
-    }
 }
 
 
 void Realtime::paintWater(TerrainGenerator::WaterInfo water){
+//    glEnable(GL_BLEND);
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//    glUseProgram(m_water_shader);
+//    glBindVertexArray(water.waterVAO);
+//    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "modelMatrix"), 1, GL_FALSE, &m_model[0][0]);//get first index's address
+//    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "viewMatrix"), 1, GL_FALSE, &m_view[0][0]);//get first index's address
+//    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "projectionMatrix"), 1, GL_FALSE, &m_proj[0][0]);//get first index's address
+//    glUniform1f(glGetUniformLocation(m_water_shader, "k_a"), m_ka);//get first index's address
+//    glUniform1f(glGetUniformLocation(m_water_shader, "k_d"), m_kd);
+//    glUniform1f(glGetUniformLocation(m_water_shader, "k_s"), m_ks);//get first index's address
+
+
+
+//    glm::vec4 cSpecular = glm::vec4(1.f);
+//    glm::vec4 cAmbient = glm::vec4(1.f);
+//    glm::vec4 cDiffuse = glm::vec4(0.f, 0.f, 1.f, 1.f);
+//    GLint cameraPosLocation1 = glGetUniformLocation(m_water_shader, "worldSpaceCamera");
+//    glUniform4fv(cameraPosLocation1, 1, &glm::inverse(m_view)[3][0]);
+//    //changed these three to not take in the json values of a shape.
+//    glUniform4fv(glGetUniformLocation(m_water_shader, "cSpecular"), 1, &cSpecular[0]);
+//    glUniform4fv(glGetUniformLocation(m_water_shader, "cAmbient"), 1, &cAmbient[0]);
+//    glUniform4fv(glGetUniformLocation(m_water_shader, "cDiffuse"), 1, &cDiffuse[0]);
+
+//    glDrawArrays(GL_TRIANGLES, 0, water.waterData.size() / 6);
+//    glBindVertexArray(0);
+//    glDisable(GL_BLEND);
+//    glUseProgram(0);
+
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glUseProgram(m_water_shader);
+
     glBindVertexArray(water.waterVAO);
-    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "modelMatrix"), 1, GL_FALSE, &m_model[0][0]);//get first index's address
-    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "viewMatrix"), 1, GL_FALSE, &m_view[0][0]);//get first index's address
-    glUniformMatrix4fv(glGetUniformLocation(m_water_shader, "projectionMatrix"), 1, GL_FALSE, &m_proj[0][0]);//get first index's address
-    glUniform1f(glGetUniformLocation(m_water_shader, "k_a"), m_ka);//get first index's address
-    glUniform1f(glGetUniformLocation(m_water_shader, "k_d"), m_kd);
-    glUniform1f(glGetUniformLocation(m_water_shader, "k_s"), m_ks);//get first index's address
+
+    GLint modelMatrixLocation1 = glGetUniformLocation(m_water_shader, "modelMatrix");
+    glUniformMatrix4fv(modelMatrixLocation1, 1, GL_FALSE, &m_model[0][0]);//get first index's address
+
+    GLint viewMatrixLocation1 = glGetUniformLocation(m_water_shader, "viewMatrix");
+    glUniformMatrix4fv(viewMatrixLocation1, 1, GL_FALSE, &m_view[0][0]);//get first index's address
+
+    GLint projectionMatrixLocation1 = glGetUniformLocation(m_water_shader, "projectionMatrix");
+    glUniformMatrix4fv(projectionMatrixLocation1, 1, GL_FALSE, &m_proj[0][0]);//get first index's address
+
+    GLint kaLocation1 = glGetUniformLocation(m_water_shader, "k_a");
+    glUniform1f(kaLocation1, m_ka);//get first index's address
 
 
+    GLint kdLocation1 = glGetUniformLocation(m_water_shader, "k_d");
+    glUniform1f(kdLocation1, m_kd);//get first index's address
 
-    glm::vec4 cSpecular = glm::vec4(1.f);
-    glm::vec4 cAmbient = glm::vec4(1.f);
-    glm::vec4 cDiffuse = glm::vec4(0.f, 0.f, 1.f, 1.f);
+    time += 0.001f * time_direction;
+    if (time > 1.0f || time < 0.0f) {
+        time_direction *= -1.0f; // Reverse the direction
+        time = glm::clamp(time, 0.0f, 1.0f); // Ensure time stays within the bounds
+    }
+
+    GLint timeLocation = glGetUniformLocation(m_water_shader, "timer");
+    glUniform1fv(timeLocation, 1, &time);
+
+
+    glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
+    GLint lightDirLocation = glGetUniformLocation(m_water_shader, "lightDir");
+    glUniform3fv(lightDirLocation, 1, &lightDirection[0]);
+
+    // Task 14: pass shininess, m_ks, and world-space camera position
+    GLint ksLocation1 = glGetUniformLocation(m_water_shader, "k_s");
+    glUniform1f(ksLocation1, m_ks);//get first index's address
+
+
     GLint cameraPosLocation1 = glGetUniformLocation(m_water_shader, "worldSpaceCamera");
     glUniform4fv(cameraPosLocation1, 1, &glm::inverse(m_view)[3][0]);
-    //changed these three to not take in the json values of a shape.
-    glUniform4fv(glGetUniformLocation(m_water_shader, "cSpecular"), 1, &cSpecular[0]);
-    glUniform4fv(glGetUniformLocation(m_water_shader, "cAmbient"), 1, &cAmbient[0]);
-    glUniform4fv(glGetUniformLocation(m_water_shader, "cDiffuse"), 1, &cDiffuse[0]);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_water_texture);
+    glUniform1i(glGetUniformLocation(m_water_shader, "reflectionTex"), 0);
 
     glDrawArrays(GL_TRIANGLES, 0, water.waterData.size() / 6);
     glBindVertexArray(0);
@@ -449,20 +549,24 @@ void Realtime::resizeGL(int w, int h) {
     // Tells OpenGL how big the screen is
     glViewport(0, 0, size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
     glDeleteTextures(1, &m_fbo_texture);
+    glDeleteTextures(1, &m_water_texture);
+    glDeleteTextures(1, &m_reflectionTexture);
     glDeleteRenderbuffers(1, &m_fbo_renderbuffer);
     glDeleteFramebuffers(1, &m_fbo);
+
     m_screen_width = size().width() * m_devicePixelRatio;
     m_screen_height = size().height() * m_devicePixelRatio;
     m_fbo_width = m_screen_width;
     m_fbo_height = m_screen_height;
-    makeFBO();
+    makeFBOs();
     m_proj = m_camera.getProjectionMatrix();
 
 
 }
 
 //Makes the FBO
-void Realtime::makeFBO(){
+void Realtime::makeFBOs(){
+    CHECK_GL_ERROR();
     glGenTextures(1, &m_fbo_texture);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_fbo_texture);
@@ -470,15 +574,25 @@ void Realtime::makeFBO(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &m_water_texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_water_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_fbo_width, m_fbo_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     glGenRenderbuffers(1, &m_fbo_renderbuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, m_fbo_renderbuffer);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_fbo_width, m_fbo_height);
     glBindRenderbuffer(GL_RENDERBUFFER,0);
     glGenFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fbo_texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fbo_texture, 0); //this affects everything
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_fbo_renderbuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
+
 }
 
 
@@ -496,7 +610,7 @@ void Realtime::sceneChanged() {
 
 void Realtime::settingsChanged() {
     if(shader > 0){
-       m_camera.update(renderData.cameraData, size().width(), size().height());
+       m_camera.update();
        m_view = m_camera.getViewMatrix();
        m_proj = m_camera.getProjectionMatrix();
        chunks = settings.shapeParameter1;
@@ -529,16 +643,58 @@ void Realtime::mouseReleaseEvent(QMouseEvent *event) {
 
 void Realtime::mouseMoveEvent(QMouseEvent *event) {
     if (m_mouseDown) {
+//        int posX = event->position().x();
+//        int posY = event->position().y();
+//        int deltaX = posX - m_prev_mouse_pos.x;
+//        int deltaY = posY - m_prev_mouse_pos.y;
+//        m_prev_mouse_pos = glm::vec2(posX, posY);
+
+
+//        m_camera.rotateCamera(deltaX, deltaY);
         int posX = event->position().x();
         int posY = event->position().y();
         int deltaX = posX - m_prev_mouse_pos.x;
         int deltaY = posY - m_prev_mouse_pos.y;
         m_prev_mouse_pos = glm::vec2(posX, posY);
 
+        glm::vec3 look = m_camera.look;
+        glm::vec3 up = m_camera.up;
+        glm::vec3 pos = m_camera.pos;
 
-        m_camera.rotateCamera(-deltaX, -deltaY);
+        // Use deltaX and deltaY here to rotate
+        glm::vec3 axis = glm::cross(look, up);
+
+        look = glm::normalize(look);
+        up = glm::normalize(up);
+        axis = glm::normalize(axis);
+
+        float pixelsToDegrees = 1.0f; // rotation speed
+
+        float thetaX = glm::radians(-deltaX * pixelsToDegrees); //horizontal
+        float thetaY = glm::radians(-deltaY * pixelsToDegrees); //vertical
+
+        glm::mat3 rotX = constructRotationMatrix(up, thetaX);
+        glm::mat3 rotY = constructRotationMatrix(axis, thetaY);
+
+        // apply
+        m_camera.look = glm::normalize((rotY * rotX) * m_camera.look);
+        m_camera.update();
+        m_view = m_camera.getViewMatrix();
+        m_proj = m_camera.getProjectionMatrix();
+
         update();
     }
+}
+
+glm::mat4 Realtime::constructRotationMatrix(const glm::vec3& axis, float theta) {
+    float x = axis.x;
+    float y = axis.y;
+    float z = axis.z;
+    glm::mat4 rot = glm::mat4(cos(theta) + x*x*(1.f-cos(theta)), x*y*(1.f-cos(theta)) - z*sin(theta), x*z*(1.f-cos(theta))+y*sin(theta), 0,
+                              x*y*(1.f-cos(theta))+z*sin(theta), cos(theta)+y*y*(1-cos(theta)), y*z*(1.f-cos(theta) - x*sin(theta)), 0,
+                              x*z*(1.f-cos(theta))-y*(sin(theta)), y*z*(1.f-cos(theta))+x*(sin(theta)), cos(theta)+z*z*(1.f-cos(theta)), 0,
+                              0,0,0,1.f);
+    return rot;
 }
 
 
